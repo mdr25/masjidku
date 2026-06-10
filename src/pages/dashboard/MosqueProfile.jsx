@@ -160,7 +160,7 @@ const MosqueProfile = () => {
   useEffect(() => {
     setGeoLoading((p) => ({ ...p, prov: true }));
     geoService
-      .getProvinces()
+      .getProvinces(formData.slug || "masjidbesar")
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : [];
         setProvinces(
@@ -179,7 +179,7 @@ const MosqueProfile = () => {
     setGeoLoading((p) => ({ ...p, city: true }));
     setCities([]);
     geoService
-      .getRegencies(prov.id)
+      .getRegencies(formData.slug || "masjidbesar", prov.id)
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : [];
         setCities(data.map((k) => ({ value: k.name, label: toTitleCase(k.name), id: k.id })));
@@ -196,7 +196,7 @@ const MosqueProfile = () => {
     setGeoLoading((p) => ({ ...p, dist: true }));
     setDistricts([]);
     geoService
-      .getDistricts(city.id)
+      .getDistricts(formData.slug || "masjidbesar", city.id)
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : [];
         setDistricts(data.map((k) => ({ value: k.name, label: toTitleCase(k.name), id: k.id })));
@@ -213,7 +213,7 @@ const MosqueProfile = () => {
     setGeoLoading((p) => ({ ...p, vill: true }));
     setVillages([]);
     geoService
-      .getVillages(dist.id)
+      .getVillages(formData.slug || "masjidbesar", dist.id)
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : [];
         setVillages(data.map((k) => ({ value: k.name, label: toTitleCase(k.name), id: k.id })));

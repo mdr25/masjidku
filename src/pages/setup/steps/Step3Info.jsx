@@ -23,7 +23,7 @@ const Step3Info = ({ data, updateData, onNext, onBack }) => {
   useEffect(() => {
     setLoadingGeo(prev => ({ ...prev, prov: true }));
     setErrorMsg("");
-    geoService.getProvinces()
+    geoService.getProvinces(data.domain || 'masjidbesar')
       .then(res => {
         if (!Array.isArray(res.data)) {
           setErrorMsg("Data provinsi bukan array! Tipe: " + typeof res.data);
@@ -45,7 +45,7 @@ const Step3Info = ({ data, updateData, onNext, onBack }) => {
       const selectedProv = provinces.find(opt => opt.value === data.info.province);
       if (selectedProv) {
         setLoadingGeo(prev => ({ ...prev, city: true }));
-        geoService.getRegencies(selectedProv.id)
+        geoService.getRegencies(data.domain || 'masjidbesar', selectedProv.id)
           .then(res => {
             const options = res.data.map(k => ({ value: k.name, label: toTitleCase(k.name), id: k.id }));
             setCities(options);
@@ -64,7 +64,7 @@ const Step3Info = ({ data, updateData, onNext, onBack }) => {
       const selectedCity = cities.find(opt => opt.value === data.info.city);
       if (selectedCity) {
         setLoadingGeo(prev => ({ ...prev, dist: true }));
-        geoService.getDistricts(selectedCity.id)
+        geoService.getDistricts(data.domain || 'masjidbesar', selectedCity.id)
           .then(res => {
             const options = res.data.map(k => ({ value: k.name, label: toTitleCase(k.name), id: k.id }));
             setDistricts(options);
@@ -83,7 +83,7 @@ const Step3Info = ({ data, updateData, onNext, onBack }) => {
       const selectedDist = districts.find(opt => opt.value === data.info.district);
       if (selectedDist) {
         setLoadingGeo(prev => ({ ...prev, vill: true }));
-        geoService.getVillages(selectedDist.id)
+        geoService.getVillages(data.domain || 'masjidbesar', selectedDist.id)
           .then(res => {
             const options = res.data.map(k => ({ value: k.name, label: toTitleCase(k.name), id: k.id }));
             setVillages(options);
