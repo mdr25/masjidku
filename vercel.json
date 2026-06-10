@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api-wilayah/:path*",
-      "destination": "https://masjidku-api.onrender.com/:path*"
+      "destination": "https://emsifa.github.io/api-wilayah-indonesia/api/:path*"
     },
     {
       "source": "/api-prayer/:path*",
