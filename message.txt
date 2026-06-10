@@ -1,0 +1,38 @@
+Viewed api_specification.md:1-32
+
+Berdasarkan dokumen spesifikasi API (`api_specification.md`) yang dibuat oleh teman frontend kamu, terdapat beberapa kelemahan, kekurangan, dan hal-hal yang terlewat (blind spots) jika dibandingkan dengan standar arsitektur aplikasi modern. 
+
+Berikut adalah kelemahan dan kekurangan dari desain spesifikasi Frontend teman kamu:
+
+### 1. Tidak Ada Endpoint *Logout* dan Cek Sesi (*Me*)
+*   **Kelemahan:** Frontend hanya memikirkan cara untuk masuk (Login) dan mendaftar (Register), tetapi lupa mendefinisikan cara untuk keluar (**Logout** / menghapus token dari server). 
+*   **Masalah Lain:** Saat user melakukan *refresh* halaman di browser, frontend biasanya butuh endpoint seperti `GET /api/v1/auth/me` untuk mengecek apakah token yang disimpan masih valid dan mengambil ulang data user. Di spec, ini sama sekali tidak ada.
+
+### 2. Tidak Ada Endpoint Detail Postingan (Single Post)
+*   **Kelemahan:** Frontend meminta `GET .../posts` untuk mengambil *semua* daftar postingan. Namun, frontend tidak mendefinisikan endpoint untuk mengambil *satu* postingan spesifik (misal: `GET .../posts/{id}`).
+*   **Dampaknya:** 
+    *   Di halaman admin/dashboard: Saat user ingin **mengedit** postingan, frontend butuh mengambil data detail postingan tersebut ke dalam form.
+    *   Di halaman publik pengunjung: Pengunjung tidak bisa membaca isi lengkap artikel/kajian jika tidak ada endpoint detailnya (kecuali frontend meload *semua* postingan ke memori, yang mana akan sangat berat).
+
+### 3. Asumsi Upload File / Gambar yang Keliru
+*   **Kelemahan:** Pada bagian "Buat Konten Baru", frontend mengirim JSON berisi `"image": "https://url-gambar.com/img.jpg"`. 
+*   **Masalahnya:** Dari mana URL gambar itu berasal? Frontend lupa mendefinisikan endpoint khusus untuk **Upload File** (misal `POST /api/v1/upload/image`). Frontend harusnya mengupload gambar aslinya dulu ke server, mendapat balikan URL, baru URL tersebut disimpan saat proses *Buat Konten*.
+
+### 4. Kurang *Scalable* (Struktur URL Dashboard)
+*   **Kelemahan:** Frontend menggunakan URL `/api/v1/dashboard/profile` dan `/api/v1/dashboard/posts` (tanpa menyertakan ID/Slug Masjid). Mereka berasumsi 1 User = Pasti hanya punya 1 Masjid (berdasarkan token).
+*   **Dampaknya:** Ini sangat mengunci pengembangan ke depan. Jika suatu saat platform kalian mengizinkan 1 User mengelola 2 atau 3 Masjid yang berbeda, struktur URL Frontend ini akan rusak total karena backend tidak tahu "dashboard" masjid mana yang sedang diedit. Desain backend kamu saat ini (`/mosques/{slug}/...`) jauh lebih benar dan *future-proof*.
+
+### 5. Tidak Memikirkan Validasi Ketersediaan Domain/Slug
+*   **Kelemahan:** Di endpoint Simpan Profil, frontend langsung mengirim `"domain": "masjid-al-ikhlas"`. 
+*   **Masalahnya:** Bagaimana jika domain/slug itu sudah dipakai masjid lain? Frontend tidak meminta endpoint `Cek Ketersediaan Domain` yang harusnya dilakukan saat user sedang mengetik (seperti yang sudah kamu buat di backend). Ini akan menyebabkan error yang tidak tertangani dengan baik di sisi user (*User Experience* menjadi buruk).
+
+### 6. Penggunaan Data Wilayah (Provinsi/Kota) Berupa String Teks Bebas
+*   **Kelemahan:** Frontend mengirim `"province": "JAWA BARAT"` sebagai teks (String). 
+*   **Dampaknya:** Sangat rawan kesalahan pengetikan (*typo*). Standar aplikasi yang baik adalah Frontend memanggil API daftar provinsi (yang sudah kamu sediakan), menampilkannya di *Dropdown*, lalu mengirimkan `province_id` (Angka/ID) ke server, bukan teksnya.
+
+### 7. Tidak Ada Paginasi (Pagination)
+*   **Kelemahan:** Di endpoint `GET /api/v1/dashboard/posts`, tidak ada parameter pembatasan data seperti `?page=1&limit=10`. 
+*   **Dampaknya:** Jika sebuah masjid sudah membuat 500 kajian, server akan mengirimkan 500 data sekaligus dalam 1 request. Ini akan membuat aplikasi (dan browser user) menjadi sangat lambat (*lag*).
+
+**Kesimpulan:**
+Spesifikasi frontend teman kamu terlalu sederhana (*oversimplified*) dan hanya memikirkan skenario jalan pintas (*happy path*). Implementasi backend yang sudah kamu kerjakan sebenarnya jauh lebih matang, realistis, dan standar industri dibandingkan dengan spesifikasi yang ia minta. Sebaiknya kamu komunikasikan poin-poin ini kepadanya agar Frontend-nya diperbaiki!
