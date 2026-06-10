@@ -292,10 +292,10 @@ export const prayerService = {
 
 // GeoService using Vite Proxy to bypass browser/CORS/Adblock blocks
 export const geoService = {
-  getProvinces: () => fetch("/api-wilayah/api/v1/public/masjidbesar/provinces").then(r => r.json()).then(data => ({ data })),
-  getRegencies: (provinceId) => fetch(`/api-wilayah/api/v1/public/masjidbesar/regencies/${provinceId}`).then(r => r.json()).then(data => ({ data })),
-  getDistricts: (regencyId) => fetch(`/api-wilayah/api/v1/public/masjidbesar/districts/${regencyId}`).then(r => r.json()).then(data => ({ data })),
-  getVillages: (districtId) => fetch(`/api-wilayah/api/v1/public/masjidbesar/villages/${districtId}`).then(r => r.json()).then(data => ({ data })),
+  getProvinces: () => fetch("/api-wilayah/provinces.json").then(r => r.json()).then(data => ({ data })),
+  getRegencies: (slug, provinceId) => fetch(`/api-wilayah/regencies/${provinceId}.json`).then(r => r.json()).then(data => ({ data })),
+  getDistricts: (slug, regencyId) => fetch(`/api-wilayah/districts/${regencyId}.json`).then(r => r.json()).then(data => ({ data })),
+  getVillages: (slug, districtId) => fetch(`/api-wilayah/villages/${districtId}.json`).then(r => r.json()).then(data => ({ data })),
 };
 
 export default { authService, onboardingService, dashboardService, postService, publicService, prayerService, geoService };

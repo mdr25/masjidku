@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api-wilayah": {
-        target: "https://masjidku-api.onrender.com",
+        target: "https://emsifa.github.io/api-wilayah-indonesia/api",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api-wilayah/, ""),
       },
