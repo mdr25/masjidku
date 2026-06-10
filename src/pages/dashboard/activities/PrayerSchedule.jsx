@@ -67,7 +67,7 @@ const PRAYERS = [
 ];
 
   const user = authService.getCurrentUser();
-  const userSlug = user?.slug || user?.mosque_slug || "demo";
+  const userSlug = user?.slug || user?.mosque_slug;
   const STORAGE_KEY  = `mid_prayer_config_${userSlug}`;
   const SCHEDULE_KEY = `mid_prayer_${userSlug}`;
 

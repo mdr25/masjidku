@@ -11,7 +11,7 @@ const PreviewPage = () => {
     const fetchData = async () => {
       try {
         const user = authService.getCurrentUser();
-        const slug = user?.slug || user?.mosque_slug || "demo";
+        const slug = user?.slug || user?.mosque_slug;
         
         const profileRes = await publicService.getMasjidProfile(slug);
         const profile = profileRes.data?.data || { name: "Preview Masjid" };
