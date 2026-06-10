@@ -292,10 +292,10 @@ export const prayerService = {
 
 // GeoService using Vite Proxy to bypass browser/CORS/Adblock blocks
 export const geoService = {
-  getProvinces: () => fetch("/api-wilayah/provinces.json").then(r => r.json()).then(data => ({ data })),
-  getRegencies: (slug, provinceId) => fetch(`/api-wilayah/regencies/${provinceId}.json`).then(r => r.json()).then(data => ({ data })),
-  getDistricts: (slug, regencyId) => fetch(`/api-wilayah/districts/${regencyId}.json`).then(r => r.json()).then(data => ({ data })),
-  getVillages: (slug, districtId) => fetch(`/api-wilayah/villages/${districtId}.json`).then(r => r.json()).then(data => ({ data })),
+  getProvinces: () => fetch("/api-wilayah/provinces").then(r => r.json()),
+  getRegencies: (slug, provinceId) => fetch(`/api-wilayah/regencies/${provinceId}`).then(r => r.json()),
+  getDistricts: (slug, regencyId) => fetch(`/api-wilayah/districts/${regencyId}`).then(r => r.json()),
+  getVillages: (slug, districtId) => fetch(`/api-wilayah/villages/${districtId}`).then(r => r.json()),
 };
 
 export default { authService, onboardingService, dashboardService, postService, publicService, prayerService, geoService };
