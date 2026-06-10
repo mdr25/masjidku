@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api-wilayah/:path*",
+      "destination": "https://masjidku-api.onrender.com/:path*"
+    },
+    {
+      "source": "/api-prayer/:path*",
+      "destination": "https://masjidku-api.onrender.com/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

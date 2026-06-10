@@ -1,157 +1,301 @@
-import axios from "axios";
+// Mock API Client using localStorage
+// This replaces the axios-based apiClient for demonstration purposes
+import TEMPLATE_CATALOG from '../data/templates.js';
 
-// Create axios instance
-const apiClient = axios.create({
-  baseURL: "http://mock-api.local", // Placeholder
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Mock Database Keys
-const DB_KEYS = {
-  USERS: "mid_users",
-  PROFILES: "mid_profiles", // Mosque profiles
-  TOKEN: "mid_auth_token",
-  CURRENT_USER: "mid_current_user",
+const getSlug = () => {
+  const user = JSON.parse(localStorage.getItem("mid_current_user"));
+  return user?.slug || user?.mosque_slug || "masjid-demo"; // fallback
 };
 
-// --- MOCK INTERCEPTOR ---
-// This intercepts requests to simulate a backend
-apiClient.interceptors.request.use(async (config) => {
-  const token = localStorage.getItem(DB_KEYS.TOKEN);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Initialize Mock Database
+const initDB = () => {
+  if (!localStorage.getItem("mock_users")) {
+    localStorage.setItem("mock_users", JSON.stringify([]));
   }
-
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  return config;
-});
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    // Mock Logic for Routes
-    const { config } = error;
-
-    // AUTH: LOGIN
-    if (config.url === "/auth/login" && config.method === "post") {
-      const { email, password } = config.data; // config.data might already be an object if passed directly? No, axios stringifies it usually, but let's be safe.
-      // Parsed data handling:
-      let payload = config.data;
-      if (typeof payload === "string") {
-        try {
-          payload = JSON.parse(payload);
-        } catch (e) {
-          /* ignore */
-        }
-      }
-
-      const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || "[]");
-      const user = users.find(
-        (u) => u.email === payload.email && u.password === payload.password
-      );
-
-      if (user) {
-        const token = "mock-jwt-token-" + Date.now();
-        localStorage.setItem(DB_KEYS.TOKEN, token);
-        localStorage.setItem(DB_KEYS.CURRENT_USER, JSON.stringify(user));
-        return { data: { token, user } };
-      }
-      return Promise.reject({
-        response: {
-          status: 401,
-          data: { message: "Email atau password salah" },
-        },
-      });
-    }
-
-    // AUTH: REGISTER
-    if (config.url === "/auth/register" && config.method === "post") {
-      let payload = config.data;
-      if (typeof payload === "string") {
-        try {
-          payload = JSON.parse(payload);
-        } catch (e) {
-          /* ignore */
-        }
-      }
-
-      const { mosqueName, email, password } = payload;
-
-      const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || "[]");
-
-      if (users.find((u) => u.email === email)) {
-        return Promise.reject({
-          response: {
-            status: 400,
-            data: { message: "Email sudah terdaftar. Silakan login." },
-          },
-        });
-      }
-
-      const newUser = {
-        id: Date.now(),
-        name: "Admin " + mosqueName,
-        email,
-        password,
-        role: "admin",
-        isSetupComplete: false,
-      };
-      users.push(newUser);
-      localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
-
-      // Create default mock profile
-      const profiles = JSON.parse(
-        localStorage.getItem(DB_KEYS.PROFILES) || "[]"
-      );
-      profiles.push({
-        id: newUser.id,
-        userId: newUser.id,
-        name: mosqueName,
-        slug: mosqueName.toLowerCase().replace(/ /g, "-"),
-        address: "",
-        description: "Masjid yang makmur dan nyaman.",
-        templateId: "template-1",
-      });
-      localStorage.setItem(DB_KEYS.PROFILES, JSON.stringify(profiles));
-
-      return { data: { message: "Registrasi berhasil", user: newUser } };
-    }
-
-    // AUTH: LOGOUT
-    if (config.url === "/auth/logout" && config.method === "post") {
-      localStorage.removeItem(DB_KEYS.TOKEN);
-      localStorage.removeItem(DB_KEYS.CURRENT_USER);
-      return { data: { message: "Logout berhasil" } };
-    }
-
-    // GENERIC DATA FETCHING (GET)
-    if (config.method === "get") {
-      // Handle other GET requests (Mocks)
-      // Check for specific modules
-      const urlParts = config.url.split("/");
-      const resource = urlParts[1]; // e.g., 'dkm', 'jamaah'
-
-      // Simple generic fetch for now
-      const data = JSON.parse(localStorage.getItem(`mid_${resource}`) || "[]");
-      return { data };
-    }
-
-    // If it's not a mock route, return the original error logic (or 404)
-    return Promise.reject(error);
+  if (!localStorage.getItem("mock_mosques")) {
+    localStorage.setItem("mock_mosques", JSON.stringify({}));
   }
-);
+  if (!localStorage.getItem("mock_posts")) {
+    localStorage.setItem("mock_posts", JSON.stringify({}));
+  }
+};
+
+initDB();
 
 export const authService = {
-  login: (email, password) =>
-    apiClient.post("/auth/login", { email, password }),
-  register: (data) => apiClient.post("/auth/register", data),
-  logout: () => apiClient.post("/auth/logout"),
-  getCurrentUser: () => JSON.parse(localStorage.getItem(DB_KEYS.CURRENT_USER)),
-  isAuthenticated: () => !!localStorage.getItem(DB_KEYS.TOKEN),
+  login: async (email, password) => {
+    await delay(800);
+    const users = JSON.parse(localStorage.getItem("mock_users") || "[]");
+    let user = users.find(u => u.email === email && u.password === password);
+    
+    // Auto-create for demo if not found, or just return a default
+    if (!user) {
+      if (email && password) {
+         user = { id: Date.now(), name: "Admin Demo", email, password, slug: "masjid-demo" };
+      } else {
+         throw { response: { data: { message: "Email atau password salah." } } };
+      }
+    }
+
+    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
+    const mosque = mosques[user.slug] || null;
+
+    const token = "mock-token-" + Date.now();
+    localStorage.setItem("mid_auth_token", token);
+
+    const userToSave = {
+      ...user,
+      isSetupComplete: user.isSetupComplete || (mosque?.address ? true : false),
+    };
+    localStorage.setItem("mid_current_user", JSON.stringify(userToSave));
+
+    return {
+      data: {
+        success: true,
+        data: {
+          user: userToSave,
+          mosque: mosque,
+          token
+        }
+      }
+    };
+  },
+  
+  register: async (data) => {
+    await delay(800);
+    const users = JSON.parse(localStorage.getItem("mock_users") || "[]");
+    if (users.find(u => u.email === data.email)) {
+      throw { response: { data: { message: "Email sudah terdaftar." } } };
+    }
+    
+    const newUser = {
+      id: Date.now(),
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    };
+    
+    users.push(newUser);
+    localStorage.setItem("mock_users", JSON.stringify(users));
+    
+    return { data: { success: true, data: { user: newUser } } };
+  },
+
+  logout: async () => {
+    await delay(300);
+    localStorage.removeItem("mid_auth_token");
+    localStorage.removeItem("mid_current_user");
+    return { success: true };
+  },
+
+  getCurrentUser: () => JSON.parse(localStorage.getItem("mid_current_user")),
+  isAuthenticated: () => !!localStorage.getItem("mid_auth_token"),
+  fetchUser: async () => {
+    await delay(300);
+    return { data: { data: JSON.parse(localStorage.getItem("mid_current_user")) } };
+  },
 };
 
-export default apiClient;
+export const onboardingService = {
+  checkDomain: async (slug) => {
+    await delay(800);
+    // Let's assume the domain is always available for demo
+    return { data: { success: true, message: "Domain tersedia." } };
+  },
+  
+  setDomain: async (slug) => {
+    await delay(800);
+    const user = authService.getCurrentUser();
+    if (user) {
+      user.slug = slug;
+      localStorage.setItem("mid_current_user", JSON.stringify(user));
+      
+      const users = JSON.parse(localStorage.getItem("mock_users") || "[]");
+      const index = users.findIndex(u => u.id === user.id);
+      if (index !== -1) {
+        users[index].slug = slug;
+        localStorage.setItem("mock_users", JSON.stringify(users));
+      }
+      
+      const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
+      if (!mosques[slug]) {
+        mosques[slug] = { slug };
+        localStorage.setItem("mock_mosques", JSON.stringify(mosques));
+      }
+    }
+    return { data: { success: true } };
+  },
+
+  getTemplates: async () => {
+    await delay(300);
+    return {
+      data: {
+        data: TEMPLATE_CATALOG,   // ← sumber data terpusat
+      }
+    };
+  },
+
+  selectTemplate: async (templateCode) => {
+    await delay(500);
+    const slug = getSlug();
+    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
+    if (!mosques[slug]) mosques[slug] = {};
+    mosques[slug].template_code = templateCode;
+    localStorage.setItem("mock_mosques", JSON.stringify(mosques));
+    return { data: { success: true } };
+  },
+
+  updateProfile: async (slug, data) => {
+    await delay(800);
+    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
+    mosques[slug] = { ...mosques[slug], ...data };
+    localStorage.setItem("mock_mosques", JSON.stringify(mosques));
+    
+    const user = authService.getCurrentUser();
+    if (user) {
+      user.isSetupComplete = true;
+      localStorage.setItem("mid_current_user", JSON.stringify(user));
+
+      const users = JSON.parse(localStorage.getItem("mock_users") || "[]");
+      const index = users.findIndex(u => u.id === user.id);
+      if (index !== -1) {
+        users[index].isSetupComplete = true;
+        localStorage.setItem("mock_users", JSON.stringify(users));
+      }
+    }
+
+    return { data: { success: true, data: mosques[slug] } };
+  },
+};
+
+export const dashboardService = {
+  getProfile: async () => {
+    await delay(500);
+    const slug = getSlug();
+    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
+    return { data: { data: mosques[slug] || {} } };
+  },
+  updateProfile: async (data) => {
+    return onboardingService.updateProfile(getSlug(), data);
+  },
+};
+
+export const postService = {
+  getPosts: async () => {
+    await delay(500);
+    const slug = getSlug();
+    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
+    const posts = allPosts[slug] || [];
+    return { data: { data: posts } };
+  },
+  
+  getPost: async (id) => {
+    await delay(300);
+    const slug = getSlug();
+    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
+    const post = (allPosts[slug] || []).find(p => p.id == id);
+    return { data: { data: post } };
+  },
+
+  createPost: async (data) => {
+    await delay(500);
+    const slug = getSlug();
+    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
+    if (!allPosts[slug]) allPosts[slug] = [];
+    
+    const newPost = { is_published: false, ...data, id: Date.now(), created_at: new Date().toISOString() };
+    allPosts[slug].push(newPost);
+    localStorage.setItem("mock_posts", JSON.stringify(allPosts));
+    
+    return { data: { success: true, data: newPost } };
+  },
+
+  updatePost: async (id, data) => {
+    await delay(500);
+    const slug = getSlug();
+    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
+    const index = (allPosts[slug] || []).findIndex(p => p.id == id);
+    if (index !== -1) {
+      allPosts[slug][index] = { ...allPosts[slug][index], ...data };
+      localStorage.setItem("mock_posts", JSON.stringify(allPosts));
+    }
+    return { data: { success: true } };
+  },
+
+  deletePost: async (id) => {
+    await delay(500);
+    const slug = getSlug();
+    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
+    if (allPosts[slug]) {
+      allPosts[slug] = allPosts[slug].filter(p => p.id != id);
+      localStorage.setItem("mock_posts", JSON.stringify(allPosts));
+    }
+    return { data: { success: true } };
+  },
+
+  publishPost: async (id) => {
+    await delay(500);
+    const slug = getSlug();
+    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
+    const index = (allPosts[slug] || []).findIndex(p => p.id == id);
+    if (index !== -1) {
+      allPosts[slug][index].is_published = true;
+      localStorage.setItem("mock_posts", JSON.stringify(allPosts));
+    }
+    return { data: { success: true } };
+  },
+
+  unpublishPost: async (id) => {
+    await delay(500);
+    const slug = getSlug();
+    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
+    const index = (allPosts[slug] || []).findIndex(p => p.id == id);
+    if (index !== -1) {
+      allPosts[slug][index].is_published = false;
+      localStorage.setItem("mock_posts", JSON.stringify(allPosts));
+    }
+    return { data: { success: true } };
+  },
+};
+
+export const publicService = {
+  getMasjidProfile: async (slug) => {
+    await delay(500);
+    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
+    return { data: { data: mosques[slug] || {} } };
+  },
+  getMasjidPosts: async (slug, type = "") => {
+    await delay(500);
+    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
+    let posts = allPosts[slug] || [];
+    if (type) {
+      posts = posts.filter(p => p.type === type);
+    }
+    return { data: { data: posts.filter(p => p.is_published) } };
+  },
+  getMasjidPostDetail: async (slug, postSlug) => {
+    await delay(300);
+    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
+    const post = (allPosts[slug] || []).find(p => p.slug === postSlug);
+    return { data: { data: post } };
+  },
+};
+
+export const prayerService = {
+  getProvinces: async () => ({ data: { data: [] } }), // fallback
+  getCities: async (data) => ({ data: { data: [] } }),
+  getSchedule: async (data) => ({ data: { data: {} } }),
+};
+
+// GeoService using Vite Proxy to bypass browser/CORS/Adblock blocks
+export const geoService = {
+  getProvinces: () => fetch("/api-wilayah/provinces.json").then(r => r.json()).then(data => ({ data })),
+  getRegencies: (provinceId) => fetch(`/api-wilayah/regencies/${provinceId}.json`).then(r => r.json()).then(data => ({ data })),
+  getDistricts: (regencyId) => fetch(`/api-wilayah/districts/${regencyId}.json`).then(r => r.json()).then(data => ({ data })),
+  getVillages: (districtId) => fetch(`/api-wilayah/villages/${districtId}.json`).then(r => r.json()).then(data => ({ data })),
+};
+
+export default { authService, onboardingService, dashboardService, postService, publicService, prayerService, geoService };

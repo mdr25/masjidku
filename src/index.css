@@ -1,22 +1,30 @@
 :root {
-  --primary-color: #215E4C;
-  --secondary-color: #3B7D62; 
-  --accent-color: #F2C94C;
-  --light-green: #E8F5E9;
+  --primary-color: #215e4c;
+  --secondary-color: #3b7d62;
+  --accent-color: #f2c94c;
+  --light-green: #e8f5e9;
   --text-dark: #333333;
-  --text-light: #F9F9F9;
-  --bs-primary: #215E4C; /* Override Bootstrap Primary */
+  --text-light: #f9f9f9;
+  --bs-primary: #215e4c; /* Override Bootstrap Primary */
   --bs-success: #28a745;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
   color: var(--text-dark);
   background-color: #f5f5f5;
 }
 
-.text-primary { color: var(--primary-color) !important; }
-.bg-primary { background-color: var(--primary-color) !important; }
+.text-primary {
+  color: var(--primary-color) !important;
+}
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
 .btn-primary {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
@@ -27,9 +35,15 @@ body {
 }
 
 /* Custom Utilities */
-.h-100vh { height: 100vh; }
-.object-fit-cover { object-fit: cover; }
-.cursor-pointer { cursor: pointer; }
+.h-100vh {
+  height: 100vh;
+}
+.object-fit-cover {
+  object-fit: cover;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
 
 /* Dashboard Sidebar */
 .sidebar {
@@ -38,14 +52,15 @@ body {
   min-height: 100vh;
 }
 .sidebar .nav-link {
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
   padding: 10px 20px;
   border-radius: 8px;
   margin: 4px 10px;
   transition: all 0.2s;
 }
-.sidebar .nav-link:hover, .sidebar .nav-link.active {
-  background-color: rgba(255,255,255,0.2);
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
@@ -55,7 +70,51 @@ body {
   background-color: var(--primary-color);
 }
 .auth-card {
-  background-color: #A5D6B8; /* Matching the light green in Image 2/3 roughly */
+  background-color: #a5d6b8; /* Matching the light green in Image 2/3 roughly */
   border-radius: 12px;
   overflow: hidden;
+}
+
+/* Landing Page Custom "Tailwind-like" Utilities */
+.hover-scale {
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.hover-scale:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.menu-card {
+  background-color: #2d5a46;
+  transition:
+    transform 0.3s ease,
+    filter 0.3s ease;
+}
+.menu-card:hover {
+  transform: translateY(-5px);
+  filter: brightness(1.1);
+}
+
+.text-green-brand {
+  color: #2d5a46 !important;
+}
+.bg-green-brand {
+  background-color: #2d5a46 !important;
+}
+.btn-green-light {
+  background-color: #61b185;
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+.btn-green-light:hover {
+  background-color: #4e9970;
+  color: white;
+  transform: scale(1.05);
+}
+
+.opacity-70 {
+  opacity: 0.7;
 }

@@ -1,0 +1,113 @@
+/**
+ * typography.css — MasjidKu Design System
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Skala SEDERHANA: hanya 4 ukuran. Mudah diprediksi, konsisten di semua halaman.
+ *
+ *  h1      → 1.5rem    (24px)  heading utama halaman
+ *  h2      → 1.25rem   (20px)  heading seksi / card
+ *  body    → 0.9375rem (15px)  isi konten, label, tombol, link, input
+ *  caption → 0.8125rem (13px)  teks kecil: metadata, tanggal, badge, uppercase label
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --font-base:     'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ── 4-tier font scale ── */
+  --text-h1:      1.5rem;      /* 24px */
+  --text-h2:      1.25rem;     /* 20px */
+  --text-body:    0.9375rem;   /* 15px — default untuk semua isi */
+  --text-caption: 0.8125rem;   /* 13px — teks sekunder & label kecil */
+
+  /* ── Font Weight ── */
+  --fw-normal:   400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* ── Line Heights ── */
+  --lh-tight:   1.3;
+  --lh-normal:  1.6;
+  --lh-relaxed: 1.75;
+
+  /* ── Letter Spacing ── */
+  --ls-tight:   -0.3px;
+  --ls-normal:   0;
+  --ls-wide:     1px;
+  --ls-wider:    1.5px;
+
+  /* ── Color Tokens ── */
+  --color-text-primary:     #1a1a1a;
+  --color-text-secondary:   #344054;
+  --color-text-muted:       #6B7280;
+  --color-text-placeholder: #9AA3AF;
+  --color-brand-green:      #1A5C45;
+  --color-brand-dark:       #0D3B2E;
+  --color-brand-gold:       #C9A84C;
+}
+
+/* ── Global base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: var(--font-base);
+  font-size: var(--text-body);   /* 15px */
+  color: var(--color-text-primary);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Heading defaults ── */
+h1, .h1 {
+  font-size: var(--text-h1);    /* 24px */
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+  line-height: var(--lh-tight);
+}
+h2, .h2 {
+  font-size: var(--text-h2);    /* 20px */
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+  line-height: var(--lh-tight);
+}
+h3, .h3 { font-size: var(--text-h2);   font-weight: var(--fw-bold); }
+h4, .h4 { font-size: var(--text-body); font-weight: var(--fw-bold); }
+h5, .h5 { font-size: var(--text-body); font-weight: var(--fw-semibold); }
+h6, .h6 { font-size: var(--text-caption); font-weight: var(--fw-semibold); }
+
+/* ── Form elements — semua 15px ── */
+.form-label {
+  font-size: var(--text-body);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+.form-control,
+.form-select {
+  font-family: var(--font-base);
+  font-size: var(--text-body) !important;
+}
+.form-text {
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+}
+
+/* ── Buttons ── */
+.btn {
+  font-family: var(--font-base);
+  font-size: var(--text-body);
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Utility ── */
+.caption { font-size: var(--text-caption) !important; }
+.label-section {
+  font-size: var(--text-caption);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  color: var(--color-text-placeholder);
+}

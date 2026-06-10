@@ -1,22 +1,331 @@
-.wizard-header {
-  background-color: #5cb88f !important; /* Adjust to match image green */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/*
+ * SetupWizard.css
+ * Font sizes: body=0.9375rem(15px), caption=0.8125rem(13px)
+ * Headings via typography.css tokens
+ */
+
+/* ── Base ── */
+.setup-page {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  min-height: 100vh;
+  background: #F5F6F8;
+  font-size: 0.9375rem;
 }
 
-.filter-white {
-  filter: brightness(0) invert(1);
+/* ── Top Navbar ── */
+.setup-navbar {
+  background: linear-gradient(135deg, #0D3B2E 0%, #1A5C45 100%);
+  padding: 14px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 16px rgba(13,59,46,0.15);
 }
 
-.step-item {
-  flex: 1;
+/* ── Stepper ── */
+.setup-stepper {
+  background: #fff;
+  border-bottom: 1px solid #EAECF0;
+  padding: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.setup-stepper::-webkit-scrollbar { display: none; }
+
+.stepper-inner {
+  display: flex;
+  align-items: stretch;
+  min-width: max-content;
+  margin: 0 auto;
+  max-width: 960px;
+}
+
+.stepper-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.stepper-item:hover:not(.active) { background: #F7F8FA; }
+.stepper-item.active   { border-bottom-color: #1A5C45; }
+.stepper-item.completed { border-bottom-color: #C9A84C; }
+
+/* stepper dot: caption size */
+.stepper-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;   /* 13px caption */
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  background: #F0F2F5;
+  color: #9AA3AF;
+}
+.stepper-item.active .stepper-dot {
+  background: linear-gradient(135deg, #0D3B2E, #1A5C45);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(13,59,46,0.3);
+}
+.stepper-item.completed .stepper-dot {
+  background: linear-gradient(135deg, #C9A84C, #B8941F);
+  color: #fff;
+}
+
+/* stepper label: body size */
+.stepper-label {
+  font-size: 0.9375rem;   /* 15px body */
+  font-weight: 500;
+  color: #9AA3AF;
+  line-height: 1.2;
+}
+.stepper-item.active .stepper-label    { color: #1A5C45; font-weight: 700; }
+.stepper-item.completed .stepper-label { color: #344054; font-weight: 600; }
+
+/* ── Content Card ── */
+.setup-card {
+  background: #fff;
+  border: 1px solid #EAECF0;
+  border-radius: 16px;
+  padding: 36px 40px;
+  max-width: 900px;
+  margin: 32px auto;
+}
+
+/* ── Input: body size ── */
+.sw-input {
+  background: #F7F8FA !important;
+  border: 1.5px solid #EAECF0 !important;
+  border-radius: 10px !important;
+  font-size: 0.9375rem !important;  /* 15px body */
+  color: #1a1a1a !important;
+  box-shadow: none !important;
+  padding: 10px 14px !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+.sw-input:focus {
+  border-color: #1A5C45 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(26,92,69,0.08) !important;
+}
+.sw-input:disabled, .sw-input[readonly] {
+  background: #F0F0F0 !important;
+  color: #9AA3AF !important;
+}
+
+/* ── Buttons: body size ── */
+.sw-btn-primary {
+  background: linear-gradient(135deg, #0D3B2E, #1A5C45);
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9375rem;   /* 15px body */
+  padding: 10px 24px;
+  color: #fff;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(13,59,46,0.2);
+}
+.sw-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(13,59,46,0.3);
+  transform: translateY(-1px);
+  color: #fff;
+}
+.sw-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.sw-btn-secondary {
+  background: #F7F8FA;
+  border: 1.5px solid #EAECF0;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9375rem;   /* 15px body */
+  padding: 10px 24px;
+  color: #344054;
+  transition: all 0.2s ease;
+}
+.sw-btn-secondary:hover { background: #EAECF0; color: #1a1a1a; }
+
+.sw-btn-gold {
+  background: linear-gradient(135deg, #C9A84C, #B8941F);
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9375rem;   /* 15px body */
+  padding: 11px 28px;
+  color: #fff;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(201,168,76,0.3);
+}
+.sw-btn-gold:hover {
+  box-shadow: 0 4px 16px rgba(201,168,76,0.4);
+  transform: translateY(-1px);
+  color: #fff;
+}
+
+/* ── Step Footer ── */
+.step-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid #EAECF0;
+}
+
+/* ── Step header: h2 size ── */
+.step-header {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #F0F2F5;
+}
+.step-header h4 {
+  font-weight: 700;
+  color: #1a1a1a;
+  font-size: 1.25rem;     /* 20px h2 */
+  letter-spacing: -0.3px;
+  margin-bottom: 6px;
+}
+.step-header p {
+  font-size: 0.9375rem;   /* 15px body */
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Field group ── */
+.sw-field label {
+  font-size: 0.9375rem;   /* 15px body */
+  font-weight: 600;
+  color: #344054;
+  margin-bottom: 6px;
+  display: block;
+}
+.sw-field .hint {
+  font-size: 0.8125rem;   /* 13px caption */
+  color: #9AA3AF;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+/* ── Domain preview: body ── */
+.domain-preview {
+  background: #F0F7F4;
+  border: 1.5px solid #C8E6D9;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.9375rem;   /* 15px body */
+  color: #0D3B2E;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Template card ── */
+.template-card {
+  border: 2px solid #EAECF0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  overflow: hidden;
   position: relative;
-  padding-bottom: 5px;
+}
+.template-card:hover {
+  border-color: #A0D4B8;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.template-card.selected {
+  border-color: #1A5C45;
+  box-shadow: 0 0 0 3px rgba(26,92,69,0.12);
+}
+.template-card .selected-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(135deg, #0D3B2E, #1A5C45);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.8125rem;   /* 13px caption */
+  z-index: 10;
+}
+.template-thumb {
+  height: 150px;
+  background: #F7F8FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.template-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── File upload zone ── */
+.upload-zone {
+  background: #F7F8FA;
+  border: 2px dashed #EAECF0;
+  border-radius: 12px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.upload-zone:hover { border-color: #1A5C45; background: #F0F7F4; }
+.upload-zone.has-file {
+  border-color: #1A5C45;
+  background: #F0FDF4;
+  border-style: solid;
+}
+.upload-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
-/* Add custom green underline for active step? or just leave text style */
-.step-item.active {
-  border-bottom: 2px solid white;
+/* ── Terms box: body ── */
+.terms-box {
+  background: #F7F8FA;
+  border: 1px solid #EAECF0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  max-height: 280px;
+  overflow-y: auto;
+  font-size: 0.9375rem;   /* 15px body */
+  line-height: 1.75;
+  color: #344054;
+  scrollbar-width: thin;
+  scrollbar-color: #D0D5DD transparent;
 }
 
-.wizard-card {
-  min-height: 400px;
+/* ── Finish screen ── */
+.finish-icon {
+  width: 96px;
+  height: 96px;
+  background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 28px;
+  animation: finish-pulse 2.5s ease-in-out infinite;
+}
+@keyframes finish-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,92,69,0.12); }
+  50%       { box-shadow: 0 0 0 18px rgba(26,92,69,0); }
 }

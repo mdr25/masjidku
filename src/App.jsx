@@ -19,7 +19,7 @@ import KajianList from "./pages/dashboard/activities/KajianList";
 import DKMList from "./pages/dashboard/admin/DKMList";
 import JamaahList from "./pages/dashboard/admin/JamaahList";
 import ProgramList from "./pages/dashboard/activities/ProgramList";
-import ProgramForm from "./pages/dashboard/activities/ProgramForm";
+
 import DonationList from "./pages/dashboard/finance/DonationList";
 import ArticleList from "./pages/dashboard/info/ArticleList";
 import GalleryList from "./pages/dashboard/info/GalleryList";
@@ -27,6 +27,8 @@ import HomeEditor from "./pages/dashboard/editor/HomeEditor";
 import HeaderEditor from "./pages/dashboard/editor/HeaderEditor";
 import HeroEditor from "./pages/dashboard/editor/HeroEditor";
 import FooterEditor from "./pages/dashboard/editor/FooterEditor";
+import ContentManager from "./pages/dashboard/ContentManager";
+import ThemePage from "./pages/dashboard/ThemePage";
 
 function App() {
   return (
@@ -38,12 +40,17 @@ function App() {
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/setup" element={<SetupWizard />} />
 
-        {/* Protected Dashboard Routes */}
-        <Route path="/app" element={<ProtectedRoute />}>
-          <Route element={<DashboardLayout />}>
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          {/* Setup Route */}
+          <Route path="/setup" element={<SetupWizard />} />
+
+          {/* Dashboard Routes */}
+          <Route path="/app" element={<DashboardLayout />}>
             <Route path="dashboard" element={<DashboardHome />} />
+            <Route path="appearance" element={<ThemePage />} />
+            <Route path="content" element={<ContentManager />} />
             <Route path="profile" element={<MosqueProfile />} />
 
             {/* Admin Modules */}
@@ -54,11 +61,7 @@ function App() {
             <Route path="activities/prayer" element={<PrayerSchedule />} />
             <Route path="activities/kajian" element={<KajianList />} />
             <Route path="activities/program" element={<ProgramList />} />
-            <Route path="activities/program/new" element={<ProgramForm />} />
-            <Route
-              path="activities/program/edit/:id"
-              element={<ProgramForm />}
-            />
+
 
             {/* Finance Modules */}
             <Route path="finance/donations" element={<DonationList />} />
