@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api-wilayah/:path*",
-      "destination": "https://raw.githubusercontent.com/emsifa/api-wilayah-indonesia/master/api/:path*"
+      "destination": "https://raw.githubusercontent.com/emsifa/api-wilayah-indonesia/gh-pages/api/:path*"
     },
     {
       "source": "/api-prayer/:path*",
