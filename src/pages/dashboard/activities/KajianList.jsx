@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   FaPlus, FaEdit, FaTrash, FaSearch, FaTimes, FaSave,
-  FaCheckCircle, FaExclamationCircle, FaBook, FaEye, FaEyeSlash, FaImage,
+  FaCheckCircle, FaExclamationCircle, FaBook, FaEye, FaEyeSlash, FaImage, FaArrowLeft
 } from "react-icons/fa";
 
 import { postService } from "../../../services/apiClient";
@@ -187,6 +188,10 @@ const KajianList = () => {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     .kj-page { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    /* Back btn */
+    .kj-btn-back { display: inline-flex; align-items: center; gap: 8px; color: #6B7280; font-size: 0.875rem; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; background: #F5F6F8; border: 1px solid #EAECF0; transition: all 0.2s; margin-bottom: 16px; }
+    .kj-btn-back:hover { background: #EAECF0; color: #1a1a1a; }
 
     /* Stat */
     .kj-stat { background: #fff; border: 1px solid #EAECF0; border-radius: 14px; padding: 16px 20px; }
@@ -311,6 +316,10 @@ const KajianList = () => {
   return (
     <div className="kj-page">
       <style>{css}</style>
+
+      <Link to="/app/content" className="kj-btn-back">
+        <FaArrowLeft size={13} /> Kembali
+      </Link>
 
       {/* ── Header ── */}
       <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">

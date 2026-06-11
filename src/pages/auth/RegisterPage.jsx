@@ -21,8 +21,8 @@ const RegisterPage = () => {
     try {
       const { mosqueName, email, password } = formData;
       await authService.register({ name: mosqueName, email, password });
-      alert("Registrasi berhasil! Silakan masuk dengan akun Anda.");
-      navigate("/login");
+      await authService.login(email, password);
+      navigate("/app/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Gagal mendaftar. Silakan coba lagi.");
     } finally {

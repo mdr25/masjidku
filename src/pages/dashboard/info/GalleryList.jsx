@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
 import {
   FaPlus, FaTrash, FaTimes, FaImage, FaPlay,
   FaCheckCircle, FaExclamationCircle, FaExpand,
-  FaYoutube, FaUpload, FaSave,
+  FaYoutube, FaUpload, FaSave, FaArrowLeft,
 } from "react-icons/fa";
 import { authService } from "../../../services/apiClient";
 
@@ -190,6 +191,10 @@ const GalleryList = () => {
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     .gl-page { font-family: 'Plus Jakarta Sans', sans-serif; }
 
+    /* Back btn */
+    .gl-btn-back { display: inline-flex; align-items: center; gap: 8px; color: #6B7280; font-size: 0.875rem; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; background: #F5F6F8; border: 1px solid #EAECF0; transition: all 0.2s; margin-bottom: 16px; }
+    .gl-btn-back:hover { background: #EAECF0; color: #1a1a1a; }
+
     /* Tabs */
     .gl-tabs { display: flex; gap: 6px; }
     .gl-tab { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 10px; font-size: 0.875rem; font-weight: 700; border: 1.5px solid #EAECF0; background: #fff; color: #6B7280; cursor: pointer; transition: all 0.18s; }
@@ -299,6 +304,10 @@ const GalleryList = () => {
   return (
     <div className="gl-page">
       <style>{css}</style>
+
+      <Link to="/app/content" className="gl-btn-back">
+        <FaArrowLeft size={13} /> Kembali
+      </Link>
 
       {/* ── Header ── */}
       <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">

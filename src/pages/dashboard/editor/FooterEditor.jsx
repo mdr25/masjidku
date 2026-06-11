@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { Spinner } from "react-bootstrap";
 import {
   FaSave, FaFacebook, FaTwitter, FaInstagram, FaYoutube,
   FaWhatsapp, FaTiktok, FaPhone, FaEnvelope, FaMapMarkerAlt,
-  FaCheckCircle, FaExclamationCircle, FaMosque, FaGlobe,
+  FaCheckCircle, FaExclamationCircle, FaMosque, FaGlobe, FaArrowLeft
 } from "react-icons/fa";
 
 
@@ -110,7 +111,10 @@ const FooterEditor = () => {
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     .fe-page { font-family: 'Plus Jakarta Sans', sans-serif; }
 
-    /* Section card */
+    /* Back btn */
+    .fe-btn-back { display: inline-flex; align-items: center; gap: 8px; color: #6B7280; font-size: 0.875rem; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; background: #F5F6F8; border: 1px solid #EAECF0; transition: all 0.2s; margin-bottom: 16px; }
+    .fe-btn-back:hover { background: #EAECF0; color: #1a1a1a; }
+
     .fe-section { background: #fff; border: 1px solid #EAECF0; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
     .fe-section-title { font-size: 0.9375rem; font-weight: 800; color: #0D3B2E; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
     .fe-section-sub { font-size: 0.8125rem; color: #9AA3AF; margin-bottom: 20px; }
@@ -207,6 +211,10 @@ const FooterEditor = () => {
   return (
     <div className="fe-page" style={{ paddingBottom: 80 }}>
       <style>{css}</style>
+
+      <Link to="/app/content" className="fe-btn-back">
+        <FaArrowLeft size={13} /> Kembali
+      </Link>
 
       {/* ── Header ── */}
       <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">

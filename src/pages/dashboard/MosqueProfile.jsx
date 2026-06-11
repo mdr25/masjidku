@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { Form, Row, Col, Spinner } from "react-bootstrap";
 import Select from "react-select";
 import { dashboardService, geoService } from "../../services/apiClient";
@@ -7,11 +8,17 @@ import {
   FaMosque,
   FaPhone,
   FaEnvelope,
+  FaImage,
+  FaTimes,
   FaCamera,
+  FaInstagram,
+  FaFacebookF,
+  FaYoutube,
+  FaCheck,
+  FaArrowLeft,
   FaCheckCircle,
   FaExclamationCircle,
   FaUpload,
-  FaTimes,
 } from "react-icons/fa";
 
 
@@ -371,6 +378,9 @@ const MosqueProfile = () => {
           background: #9AA3AF;
           box-shadow: none;
         }
+        /* Back btn */
+        .pf-btn-back { display: inline-flex; align-items: center; gap: 8px; color: #6B7280; font-size: 0.875rem; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; background: #F5F6F8; border: 1px solid #EAECF0; transition: all 0.2s; margin-bottom: 16px; }
+        .pf-btn-back:hover { background: #EAECF0; color: #1a1a1a; }
         /* Toast */
         .pf-toast {
           position: fixed;
@@ -394,6 +404,9 @@ const MosqueProfile = () => {
         @keyframes pfToastUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
       `}</style>
 
+      <Link to="/app/content" className="pf-btn-back">
+        <FaArrowLeft size={13} /> Kembali
+      </Link>
 
       {/* ── Header ── */}
       <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">

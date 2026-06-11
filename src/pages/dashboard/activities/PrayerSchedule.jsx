@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   FaMapMarkerAlt, FaSyncAlt, FaSave, FaMosque,
-  FaCheckCircle, FaExclamationCircle, FaInfoCircle,
+  FaCheckCircle, FaExclamationCircle, FaInfoCircle, FaArrowLeft,
 } from "react-icons/fa";
 import { authService } from "../../../services/apiClient";
 
@@ -101,7 +102,7 @@ const PrayerSchedule = () => {
   const [apiError,    setApiError]    = useState(null);
 
   // Ref untuk preserve kota tersimpan saat load config (mencegah province-change effect me-reset city)
-  const savedCityRef = React.useRef("");
+  const savedCityRef = useRef("");
 
 
   /* ── Load saved config ── */
@@ -177,10 +178,7 @@ const PrayerSchedule = () => {
     setApiError(null);
     try {
       const res = await prayerAPI.getSchedule(userSlug, prov, kot, todayMonth, todayYear);
-      console.log("Prayer API raw response:", JSON.stringify(res).slice(0, 400));
-
       const list = normalizeScheduleList(res);
-      console.log(`Schedule list length: ${list.length}, first entry:`, list[0]);
 
       if (!list.length) {
         setApiError("Jadwal tidak tersedia untuk kota ini. Coba kota lain atau periksa nama kota.");
@@ -196,7 +194,6 @@ const PrayerSchedule = () => {
       if (!entry && list.length >= todayDay) entry = list[todayDay - 1];
       if (!entry) entry = list[0];
 
-      console.log("Today's entry:", entry);
       setTodaySchedule(entry);
     } catch (e) {
       console.error("Schedule fetch error:", e);
@@ -287,6 +284,10 @@ const PrayerSchedule = () => {
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     .ps-page { font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 80px; }
 
+    /* Back btn */
+    .ps-btn-back { display: inline-flex; align-items: center; gap: 8px; color: #6B7280; font-size: 0.875rem; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; background: #F5F6F8; border: 1px solid #EAECF0; transition: all 0.2s; margin-bottom: 16px; }
+    .ps-btn-back:hover { background: #EAECF0; color: #1a1a1a; }
+
     .ps-section { background: #fff; border: 1px solid #EAECF0; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
 
     .ps-select { width: 100%; padding: 10px 13px; border: 1.5px solid #EAECF0; border-radius: 10px; font-size: 0.9375rem; color: #1a1a1a; background-color: #F7F8FA; outline: none; font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.18s; cursor: pointer; appearance: none; }
@@ -357,6 +358,10 @@ const PrayerSchedule = () => {
   return (
     <div className="ps-page">
       <style>{css}</style>
+
+      <Link to="/app/content" className="ps-btn-back">
+        <FaArrowLeft size={13} /> Kembali
+      </Link>
 
       {/* ── Header ── */}
       <div className="mb-4">

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   FaPlus, FaEdit, FaTrash, FaSearch, FaTimes, FaSave,
   FaCheckCircle, FaExclamationCircle, FaNewspaper, FaImage,
-  FaEye, FaEyeSlash, FaUser, FaCalendarAlt, FaAlignLeft,
+  FaEye, FaEyeSlash, FaUser, FaCalendarAlt, FaAlignLeft, FaArrowLeft,
 } from "react-icons/fa";
 import { postService } from "../../../services/apiClient";
 
@@ -218,6 +219,10 @@ const ArticleList = () => {
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     .al-page { font-family: 'Plus Jakarta Sans', sans-serif; }
 
+    /* Back btn */
+    .al-btn-back { display: inline-flex; align-items: center; gap: 8px; color: #6B7280; font-size: 0.875rem; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; background: #F5F6F8; border: 1px solid #EAECF0; transition: all 0.2s; margin-bottom: 16px; }
+    .al-btn-back:hover { background: #EAECF0; color: #1a1a1a; }
+
     /* Tabs */
     .al-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
     .al-tab { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 10px; font-size: 0.875rem; font-weight: 700; border: 1.5px solid #EAECF0; background: #fff; color: #6B7280; cursor: pointer; transition: all 0.18s; }
@@ -343,6 +348,10 @@ const ArticleList = () => {
   return (
     <div className="al-page">
       <style>{css}</style>
+
+      <Link to="/app/content" className="al-btn-back">
+        <FaArrowLeft size={13} /> Kembali
+      </Link>
 
       {/* ── Header ── */}
       <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">

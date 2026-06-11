@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Container } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
-import { FaCheck } from "react-icons/fa";
+import { useNavigate, Link } from "react-router-dom";
+import { FaCheck, FaArrowLeft } from "react-icons/fa";
 import BrandLogo from "../../components/common/BrandLogo";
 import Step1Domain from "./steps/Step1Domain";
 import Step2Template from "./steps/Step2Template";
@@ -24,13 +24,15 @@ const STEPS = [
 const SetupWizard = () => {
   const [step, setStep] = useState(1);
 
+  const currentUser = authService.getCurrentUser() || {};
+
   const [wizardData, setWizardData] = useState({
-    domain: "",
+    domain: currentUser.slug || "",
     templateId: "",
     info: {
-      name: "", address: "", description: "",
+      name: currentUser.name || "", address: "", description: "",
       province: "", city: "", district: "",
-      sub_district: "", postal: "", contact: "", email: "",
+      sub_district: "", postal: "", contact: "", email: currentUser.email || "",
     },
     files: { wakaf: null, sk: null },
     agreedToTerms: false,
@@ -63,8 +65,13 @@ const SetupWizard = () => {
       <nav className="setup-navbar">
         <Container>
           <div className="d-flex align-items-center justify-content-between">
-            {/* Brand */}
-            <BrandLogo size="md" dark={true} subtitle="Setup Website" />
+            <div className="d-flex align-items-center gap-3">
+              <Link to="/app/dashboard" className="setup-back-btn">
+                <FaArrowLeft size={13} />
+                <span>Kembali</span>
+              </Link>
+              <BrandLogo size="md" dark={true} subtitle="Setup Website" />
+            </div>
             {/* User */}
             <div className="d-flex align-items-center gap-2">
               <span className="text-white" style={{ fontSize: "0.82rem", opacity: 0.7 }}>{userName}</span>

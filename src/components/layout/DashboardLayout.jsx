@@ -16,6 +16,8 @@ const DashboardLayout = () => {
   const location = useLocation();
   const navigate  = useNavigate();
   const [user] = useState(authService.getCurrentUser());
+  const userName = user?.name || "Admin Masjid";
+  const initials = userName.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = () => {
@@ -317,12 +319,13 @@ const DashboardLayout = () => {
           <div className="d-flex align-items-center gap-3">
             <div className="text-end lh-sm">
               <div style={{ fontWeight: 600, fontSize: "0.9375rem", color: "#1a1a1a" }}>
-                {user?.name || "Admin"}
+                {userName}
               </div>
               <div style={{ fontSize: "0.75rem", color: "#9AA3AF" }}>Pengurus Masjid</div>
             </div>
-            <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, #0D3B2E, #1A5C45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <FaUserCircle size={20} style={{ color: "#fff" }} />
+            <div className="d-flex align-items-center justify-content-center rounded-circle fw-bold"
+              style={{ width: 38, height: 38, background: "linear-gradient(135deg, #0D3B2E, #1A5C45)", color: "#fff", fontSize: "0.9rem" }}>
+              {initials}
             </div>
           </div>
         </div>

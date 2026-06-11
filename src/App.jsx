@@ -48,6 +48,7 @@ function App() {
 
           {/* Dashboard Routes */}
           <Route path="/app" element={<DashboardLayout />}>
+            <Route index element={<Navigate to="/app/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardHome />} />
             <Route path="appearance" element={<ThemePage />} />
             <Route path="content" element={<ContentManager />} />
