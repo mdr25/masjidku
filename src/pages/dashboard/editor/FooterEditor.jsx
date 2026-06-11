@@ -269,7 +269,7 @@ const FooterEditor = () => {
               <div className="fe-contact-icon"><FaPhone size={14} /></div>
               <input
                 className="fe-input"
-                type="text"
+                type="tel"
                 placeholder="Contoh: (021) 1234-5678 atau +62 812-3456-7890"
                 value={form.contact.phone}
                 onChange={(e) => setContact("phone", e.target.value)}

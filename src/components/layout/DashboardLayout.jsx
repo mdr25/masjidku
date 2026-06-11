@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   Outlet, Link, useLocation, useNavigate
 } from "react-router-dom";
+import { Modal, Button } from "react-bootstrap";
 import {
   FaHome, FaMosque, FaCog, FaSignOutAlt, FaUserCircle,
   FaDesktop, FaThLarge, FaChevronLeft, FaBars, FaPaintBrush,
@@ -19,6 +20,15 @@ const DashboardLayout = () => {
   const userName = user?.name || "Admin Masjid";
   const initials = userName.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const [collapsed, setCollapsed] = useState(false);
+
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return !localStorage.getItem(`mid_welcome_seen_${user?.id}`);
+  });
+
+  const handleCloseWelcome = () => {
+    localStorage.setItem(`mid_welcome_seen_${user?.id}`, "true");
+    setShowWelcome(false);
+  };
 
   const handleLogout = () => {
     authService.logout();
@@ -356,6 +366,44 @@ const DashboardLayout = () => {
           <small style={{ color: "#9AA3AF", fontSize: "0.75rem" }}>© 2026 MasjidKu — Platform Website Masjid Indonesia</small>
         </footer>
       </div>
+
+      {/* ════════════ WELCOME MODAL (React Bootstrap) ════════════ */}
+      <Modal show={showWelcome} onHide={handleCloseWelcome} centered backdrop="static" keyboard={false}>
+        <Modal.Body className="text-center p-5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div
+            style={{
+              width: 80, height: 80, background: "rgba(201,168,76,0.12)", color: "#C9A84C",
+              borderRadius: 24, display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 24px"
+            }}
+          >
+            <FaMosque size={36} />
+          </div>
+          <h3 className="fw-bold mb-3" style={{ color: "#1a1a1a", letterSpacing: "-0.5px" }}>
+            Selamat Datang di MasjidKu
+          </h3>
+          <p className="text-muted mb-4" style={{ fontSize: "0.95rem", lineHeight: 1.6 }}>
+            Mari kita mulai tur singkat untuk mengenali fitur-fitur di panel pengurus ini. Anda akan mempelajari cara mengatur informasi, jadwal sholat, hingga konten website masjid.
+          </p>
+          <div className="d-grid gap-2">
+            <Button
+              onClick={handleCloseWelcome}
+              className="border-0 fw-bold py-2"
+              style={{ background: "linear-gradient(135deg, #0D3B2E, #1A5C45)", borderRadius: 12, fontSize: "0.95rem" }}
+            >
+              Mulai Tour Dashboard
+            </Button>
+            <Button
+              variant="link"
+              onClick={handleCloseWelcome}
+              className="text-decoration-none fw-semibold"
+              style={{ color: "#9AA3AF", fontSize: "0.9rem" }}
+            >
+              Mungkin Nanti, Lewati
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

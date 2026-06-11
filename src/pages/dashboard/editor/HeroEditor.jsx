@@ -66,10 +66,11 @@ const HeroEditor = () => {
   };
 
   const quickImages = [
-    { label: "Masjid 1", url: "https://images.unsplash.com/photo-1560626184-524744344bef?q=80&w=1233&auto=format&fit=crop" },
-    { label: "Masjid 2", url: "https://images.unsplash.com/photo-1519817650390-64a93dbad11c?q=80&w=1200&auto=format&fit=crop" },
-    { label: "Interior", url: "https://images.unsplash.com/photo-1547619292-240b0e975f85?q=80&w=1170&auto=format&fit=crop" },
-    { label: "Malam",    url: "https://images.unsplash.com/photo-1564769662533-4f00a87b4056?q=80&w=1170&auto=format&fit=crop" },
+    { label: "Harmoni", url: "https://images.unsplash.com/photo-1560626184-524744344bef?q=80&w=1233&auto=format&fit=crop" },
+    { label: "Megah",  url: "https://images.unsplash.com/photo-1619729239841-d7354ebf9bb3?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { label: "Elegan", url: "https://images.unsplash.com/photo-1711202675843-ccdb194d2b7d?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { label: "Klasik", url: "https://images.unsplash.com/photo-1605795733251-a0b6c96d9dea?q=80&w=1059&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { label: "Modern", url: "https://images.unsplash.com/photo-1531213203257-16afb0eac95e?q=80&w=1145&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
   ];
 
   /* ─── CSS ─── */

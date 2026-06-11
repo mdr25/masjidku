@@ -209,7 +209,7 @@ const Step3Info = ({ data, updateData, onNext, onBack }) => {
                            borderRadius: '10px 0 0 10px', fontSize: '0.82rem', color: '#1A5C45' }}>
                   +62
                 </div>
-                <Form.Control name="contact" placeholder="81234567890"
+                <Form.Control type="tel" name="contact" placeholder="81234567890"
                   value={data.info.contact} onChange={handleContactChange} required
                   className="sw-input" style={{ borderRadius: '0 10px 10px 0 !important', borderLeft: 'none !important' }} />
               </div>

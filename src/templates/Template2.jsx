@@ -153,6 +153,25 @@ const Template2 = ({ data }) => {
   };
   const th = T[navStyle] || T.dark;
 
+  const HeroTextBlock = ({ align = "center" }) => (
+    <div className={align === "center" ? "mx-auto text-center" : "text-start"} style={{ maxWidth: 800 }}>
+      <div className={`mb-4 d-inline-flex align-items-center gap-2 ${align === "center" ? "mx-auto" : ""}`} style={{ background: "rgba(255,255,255,0.1)", padding: "8px 20px", borderRadius: 99, backdropFilter: "blur(10px)" }}>
+        <FaMosque size={14} color="#93C5FD" />
+        <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#DBEAFE", letterSpacing: 1 }}>SELAMAT DATANG</span>
+      </div>
+      <h1 className="t2-hero-title">{heroTitle}</h1>
+      <p className={`t2-hero-subtitle ${align === "center" ? "mx-auto" : ""}`}>{heroSubtitle}</p>
+      <div className={`d-flex align-items-center gap-3 flex-wrap ${align === "center" ? "justify-content-center" : ""}`}>
+        <a href={`#${ctaPrimaryDest}`} className="t2-btn-cta" style={{ padding: "14px 32px", fontSize: "1rem" }}>
+          {ctaLabel}
+        </a>
+        <a href={`#${ctaSecondaryDest}`} className="t2-btn-cta" style={{ background: "rgba(255,255,255,0.1)", boxShadow: "none", border: "1px solid rgba(255,255,255,0.2)" }}>
+          {ctaSecondary}
+        </a>
+      </div>
+    </div>
+  );
+
   // ── Mock content ──
   const articles =
     data?.articles?.length > 0
@@ -554,26 +573,39 @@ const Template2 = ({ data }) => {
 
       {/* ══════════════════════════════════════════ HERO ════ */}
       <header className="t2-hero" id="beranda">
-        {heroImage && <img src={heroImage} alt="Hero" className="t2-hero-img" />}
-        <div className="t2-hero-overlay" />
-        <Container className="t2-hero-content text-center">
-          <div className="mx-auto" style={{ maxWidth: 800 }}>
-            <div className="mb-4 d-inline-flex align-items-center gap-2" style={{ background: "rgba(255,255,255,0.1)", padding: "8px 20px", borderRadius: 99, backdropFilter: "blur(10px)" }}>
-              <FaMosque size={14} color="#93C5FD" />
-              <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#DBEAFE", letterSpacing: 1 }}>SELAMAT DATANG</span>
-            </div>
-            <h1 className="t2-hero-title">{heroTitle}</h1>
-            <p className="t2-hero-subtitle mx-auto">{heroSubtitle}</p>
-            <div className="d-flex align-items-center justify-content-center gap-3 flex-wrap">
-              <a href={`#${ctaPrimaryDest}`} className="t2-btn-cta" style={{ padding: "14px 32px", fontSize: "1rem" }}>
-                {ctaLabel}
-              </a>
-              <a href={`#${ctaSecondaryDest}`} className="t2-btn-cta" style={{ background: "rgba(255,255,255,0.1)", boxShadow: "none", border: "1px solid rgba(255,255,255,0.2)" }}>
-                {ctaSecondary}
-              </a>
-            </div>
-          </div>
-        </Container>
+        {(heroLayout === "full-bg" || heroLayout === "centered") && (
+          <>
+            {heroImage && <img src={heroImage} alt="Hero" className="t2-hero-img" />}
+            <div className="t2-hero-overlay" />
+            <Container className="t2-hero-content text-center">
+              <HeroTextBlock align="center" />
+            </Container>
+          </>
+        )}
+
+        {(heroLayout === "image-right" || heroLayout === "image-left") && (
+          <Container className="t2-hero-content">
+            <Row className="align-items-center g-5">
+              {heroLayout === "image-left" && (
+                <Col lg={6}>
+                  <div style={{ borderRadius: 24, overflow: "hidden", boxShadow: "0 24px 48px rgba(0,0,0,0.2)" }}>
+                    {heroImage && <img src={heroImage} alt="Hero" style={{ width: "100%", height: 500, objectFit: "cover" }} />}
+                  </div>
+                </Col>
+              )}
+              <Col lg={6}>
+                <HeroTextBlock align="left" />
+              </Col>
+              {heroLayout === "image-right" && (
+                <Col lg={6}>
+                  <div style={{ borderRadius: 24, overflow: "hidden", boxShadow: "0 24px 48px rgba(0,0,0,0.2)" }}>
+                    {heroImage && <img src={heroImage} alt="Hero" style={{ width: "100%", height: 500, objectFit: "cover" }} />}
+                  </div>
+                </Col>
+              )}
+            </Row>
+          </Container>
+        )}
       </header>
 
       {/* ══════════════════════════════════════════ PRAYER ════ */}
@@ -608,7 +640,7 @@ const Template2 = ({ data }) => {
             <Row className="align-items-center g-5">
               <Col lg={6}>
                 <div style={{ position: "relative" }}>
-                  <img src={heroImage} alt="Profil" style={{ width: "100%", borderRadius: 24, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }} />
+                  <img src={profile.image || "https://images.unsplash.com/flagged/photo-1554398912-87ad6a73dbb6?q=80&w=1074&auto=format&fit=crop"} alt="Profil" style={{ width: "100%", height: 420, objectFit: "cover", borderRadius: 24, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }} />
                   <div style={{ position: "absolute", bottom: -20, right: -20, background: "#2563EB", color: "#fff", padding: 24, borderRadius: 20, boxShadow: "0 10px 30px rgba(37,99,235,0.3)" }}>
                     <FaHeart size={32} />
                   </div>
@@ -806,12 +838,27 @@ const Template2 = ({ data }) => {
                 </span>
               </div>
               <p style={{ color: "#94A3B8", lineHeight: 1.8, marginBottom: 24 }}>
-                Sistem SAAS Website Masjid modern. Menghubungkan umat, memakmurkan masjid, dan menebarkan kebaikan.
+                {data?.footer?.tagline || "Sistem SAAS Website Masjid modern. Menghubungkan umat, memakmurkan masjid, dan menebarkan kebaikan."}
               </p>
               <div className="d-flex gap-3">
-                <a href="#" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "all 0.3s" }}><FaFacebook /></a>
-                <a href="#" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "all 0.3s" }}><FaInstagram /></a>
-                <a href="#" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "all 0.3s" }}><FaYoutube /></a>
+                {data?.footer?.social?.facebook && (
+                  <a href={data.footer.social.facebook} target="_blank" rel="noreferrer" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "all 0.3s" }}><FaFacebook /></a>
+                )}
+                {data?.footer?.social?.instagram && (
+                  <a href={data.footer.social.instagram} target="_blank" rel="noreferrer" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "all 0.3s" }}><FaInstagram /></a>
+                )}
+                {data?.footer?.social?.youtube && (
+                  <a href={data.footer.social.youtube} target="_blank" rel="noreferrer" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "all 0.3s" }}><FaYoutube /></a>
+                )}
+                {data?.footer?.social?.twitter && (
+                  <a href={data.footer.social.twitter} target="_blank" rel="noreferrer" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "all 0.3s" }}><FaTwitter /></a>
+                )}
+                {data?.footer?.social?.whatsapp && (
+                  <a href={data.footer.social.whatsapp} target="_blank" rel="noreferrer" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "all 0.3s" }}><FaWhatsapp /></a>
+                )}
+                {data?.footer?.social?.tiktok && (
+                  <a href={data.footer.social.tiktok} target="_blank" rel="noreferrer" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "all 0.3s" }}><FaTiktok /></a>
+                )}
               </div>
             </Col>
             

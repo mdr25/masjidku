@@ -390,7 +390,7 @@ const PrayerSchedule = () => {
 
             <div className="ps-callout info">
               <FaInfoCircle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
-              <span>Pilih provinsi dan kota sesuai lokasi masjid. Jadwal akan diambil dari <strong>equran.id</strong> setiap kali Anda mengambil jadwal.</span>
+              <span>Pilih provinsi dan kota sesuai lokasi masjid. Jadwal akan diperbarui secara otomatis setiap kali Anda mengambil jadwal.</span>
             </div>
 
             <div className="row g-3 mb-3">

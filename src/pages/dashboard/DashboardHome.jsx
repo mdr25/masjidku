@@ -19,16 +19,13 @@ import {
   FaLayerGroup,
 } from "react-icons/fa";
 import { authService, dashboardService, postService } from "../../services/apiClient";
+import TEMPLATE_CATALOG from "../../data/templates";
 
-// Template code → human-readable name map (harus sinkron dengan ThemePage.jsx)
-const TEMPLATE_NAMES = {
-  "template-1": "Earthy Modern",
-  "template-2": "Sapphire Harmony",
-  "template-3": "Desert Heritage",
-  "template-4": "Ocean Breeze",
-  "template-5": "Midnight Modern",
+// Template code → human-readable name map
+const getTemplateName = (code) => {
+  const tpl = TEMPLATE_CATALOG.find((t) => t.template_code === code);
+  return tpl ? tpl.name : code || "-";
 };
-const getTemplateName = (code) => TEMPLATE_NAMES[code] || code || "-";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const formatDate = (iso) => {
@@ -302,21 +299,6 @@ const DashboardHome = () => {
                   <InfoRow icon={<FaGlobe size={13} />} label="Template" value={getTemplateName(profile?.template_code)} />
                 </Col>
               </Row>
-              {/* Status website */}
-              <div className="mt-3 pt-3 d-flex align-items-center gap-2"
-                style={{ borderTop: "1px solid #F0F0F0" }}>
-                {profile?.address ? (
-                  <><FaCheckCircle style={{ color: "#1A5C45" }} size={14} />
-                    <span className="fw-semibold" style={{ fontSize: "0.9375rem", color: "#1A5C45" }}>
-                      Website Siap Dipublikasikan
-                    </span></>
-                ) : (
-                  <><FaTimesCircle style={{ color: "#C62828" }} size={14} />
-                    <span style={{ fontSize: "0.9375rem", color: "#C62828", fontWeight: 600 }}>
-                      Profil belum lengkap — lengkapi agar website dapat dipublikasikan
-                    </span></>
-                )}
-              </div>
             </div>
 
             {/* Tentang Masjid — Step3Info saves as 'description', MosqueProfile adds 'visiMisi' */}
