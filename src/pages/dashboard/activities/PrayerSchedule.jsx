@@ -195,6 +195,13 @@ const PrayerSchedule = () => {
       if (!entry) entry = list[0];
 
       setTodaySchedule(entry);
+
+      // Otomatis simpan ke localStorage agar sinkron dengan PreviewPage/Website
+      const templatePrayer = {};
+      PRAYERS.forEach(({ key, templateKey }) => {
+        templatePrayer[templateKey] = entry[key] || "";
+      });
+      localStorage.setItem(SCHEDULE_KEY, JSON.stringify(templatePrayer));
     } catch (e) {
       console.error("Schedule fetch error:", e);
       setApiError("Gagal mengambil jadwal. Periksa koneksi internet.");

@@ -64,6 +64,13 @@ const PreviewPage = () => {
     fetchData();
   }, []);
 
+  // Set page title dynamically based on mosque name
+  useEffect(() => {
+    if (config?.profile?.name) {
+      document.title = `${config.profile.name} - Website Masjid`;
+    }
+  }, [config?.profile?.name]);
+
   if (loading) return <div>Loading...</div>;
 
   const templateCode = config?.templateId || "template-1";

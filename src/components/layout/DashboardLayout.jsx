@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Outlet, Link, useLocation, useNavigate
 } from "react-router-dom";
@@ -246,6 +246,10 @@ const DashboardLayout = () => {
       gap: 0;
     }
   `;
+
+  useEffect(() => {
+    document.title = "Panel Pengurus - MasjidKu";
+  }, []);
 
   return (
     <div style={{ display: "flex", width: "100%", overflow: "hidden" }}>
