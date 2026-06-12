@@ -6,6 +6,7 @@ import { Modal, Button } from "react-bootstrap";
 import {
   FaHome, FaMosque, FaCog, FaSignOutAlt, FaUserCircle,
   FaDesktop, FaThLarge, FaChevronLeft, FaBars, FaPaintBrush,
+  FaWallet,
 } from "react-icons/fa";
 import BrandLogo from "../common/BrandLogo";
 import { authService } from "../../services/apiClient";
@@ -44,6 +45,7 @@ const DashboardLayout = () => {
     { path: "/app/dashboard", icon: <FaHome size={18} />,        label: "Dashboard" },
     { path: "/app/profile",   icon: <FaMosque size={18} />,     label: "Profil Masjid" },
     { path: "/app/content",   icon: <FaThLarge size={18} />,    label: "Kelola Konten" },
+    { path: "/app/finance",   icon: <FaWallet size={17} />,     label: "Keuangan" },
     { path: "/app/appearance", icon: <FaPaintBrush size={16} />, label: "Tampilan" },
     { path: "/app/settings",  icon: <FaCog size={18} />,        label: "Pengaturan" },
   ];

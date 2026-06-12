@@ -2,15 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Modal, Form, Button, Badge, InputGroup } from "react-bootstrap";
 import CrudLayout from "../../../components/common/CrudLayout";
 
-const DonationList = ({ onUpdate }) => {
+const ExpenseList = ({ onUpdate }) => {
   const [data, setData] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     id: null,
     date: "",
-    donor: "",
+    description: "",
     amount: "",
-    type: "Infaq Jumat",
+    category: "Operasional",
+    recipient: "",
     notes: "",
   });
 
@@ -19,7 +20,7 @@ const DonationList = ({ onUpdate }) => {
   }, []);
 
   const loadData = () => {
-    const stored = JSON.parse(localStorage.getItem("mid_donations") || "[]");
+    const stored = JSON.parse(localStorage.getItem("mid_expenses") || "[]");
     setData(stored);
   };
 
@@ -37,16 +38,16 @@ const DonationList = ({ onUpdate }) => {
     } else {
       updated.push({ ...formData, id: Date.now() });
     }
-    localStorage.setItem("mid_donations", JSON.stringify(updated));
+    localStorage.setItem("mid_expenses", JSON.stringify(updated));
     setData(updated);
     setShowModal(false);
     notify();
   };
 
   const handleDelete = (item) => {
-    if (window.confirm(`Hapus data pemasukan dari "${item.donor}"?`)) {
+    if (window.confirm(`Hapus data pengeluaran "${item.description}"?`)) {
       const updated = data.filter((x) => x.id !== item.id);
-      localStorage.setItem("mid_donations", JSON.stringify(updated));
+      localStorage.setItem("mid_expenses", JSON.stringify(updated));
       setData(updated);
       notify();
     }
@@ -57,48 +58,73 @@ const DonationList = ({ onUpdate }) => {
       item || {
         id: null,
         date: new Date().toISOString().split("T")[0],
-        donor: "Hamba Allah",
+        description: "",
         amount: "",
-        type: "Infaq Jumat",
+        category: "Operasional",
+        recipient: "",
         notes: "",
       }
     );
     setShowModal(true);
   };
 
-  const formatRupiah = (num) => {
-    return new Intl.NumberFormat("id-ID", {
+  const formatRupiah = (num) =>
+    new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(num);
+
+  const CATEGORY_COLORS = {
+    "Operasional": { bg: "#FEF3C7", color: "#92400E" },
+    "Listrik & Air": { bg: "#DBEAFE", color: "#1E40AF" },
+    "Renovasi": { bg: "#FCE7F3", color: "#9D174D" },
+    "Kebersihan": { bg: "#D1FAE5", color: "#065F46" },
+    "Honorarium": { bg: "#EDE9FE", color: "#5B21B6" },
+    "Kegiatan": { bg: "#FFF7ED", color: "#C2410C" },
+    "Konsumsi": { bg: "#FFF1F2", color: "#BE123C" },
+    "Lainnya": { bg: "#F3F4F6", color: "#374151" },
   };
 
   const columns = [
     { header: "Tanggal", accessor: "date" },
-    { header: "Donatur", accessor: "donor" },
+    {
+      header: "Deskripsi",
+      accessor: "description",
+      render: (row) => (
+        <div>
+          <div className="fw-semibold" style={{ fontSize: "0.9rem" }}>{row.description}</div>
+          {row.recipient && (
+            <div style={{ fontSize: "0.78rem", color: "#9CA3AF" }}>Penerima: {row.recipient}</div>
+          )}
+        </div>
+      ),
+    },
     {
       header: "Jumlah",
       accessor: "amount",
       render: (row) => (
-        <span className="fw-bold" style={{ color: "#0D3B2E" }}>{formatRupiah(row.amount)}</span>
+        <span className="fw-bold" style={{ color: "#B91C1C" }}>{formatRupiah(row.amount)}</span>
       ),
     },
     {
-      header: "Jenis",
-      accessor: "type",
-      render: (row) => (
-        <Badge
-          style={{
-            background: "rgba(13,59,46,0.1)", color: "#0D3B2E",
-            fontWeight: 600, fontSize: "0.75rem", padding: "5px 10px", borderRadius: 6,
-          }}
-        >
-          {row.type}
-        </Badge>
-      ),
+      header: "Kategori",
+      accessor: "category",
+      render: (row) => {
+        const c = CATEGORY_COLORS[row.category] || CATEGORY_COLORS["Lainnya"];
+        return (
+          <Badge
+            style={{
+              background: c.bg, color: c.color,
+              fontWeight: 600, fontSize: "0.75rem", padding: "5px 10px", borderRadius: 6,
+            }}
+          >
+            {row.category}
+          </Badge>
+        );
+      },
     },
-    { header: "Keterangan", accessor: "notes" },
+    { header: "Catatan", accessor: "notes" },
   ];
 
   const modalStyle = `
@@ -107,7 +133,7 @@ const DonationList = ({ onUpdate }) => {
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
     .fin-modal .modal-header {
-      background: linear-gradient(135deg, #0D3B2E, #1A5C45);
+      background: linear-gradient(135deg, #7F1D1D, #B91C1C);
       color: #fff; border: none; padding: 20px 24px;
     }
     .fin-modal .modal-title { font-weight: 700; font-size: 1rem; }
@@ -121,20 +147,20 @@ const DonationList = ({ onUpdate }) => {
       font-size: 0.9rem; background: #F7F8FA; transition: all 0.2s;
     }
     .fin-modal .form-control:focus, .fin-modal .form-select:focus {
-      border-color: #1A5C45; background: #fff;
-      box-shadow: 0 0 0 3px rgba(26,92,69,0.08);
+      border-color: #B91C1C; background: #fff;
+      box-shadow: 0 0 0 3px rgba(185,28,28,0.08);
     }
     .fin-modal .modal-footer {
       border: none; padding: 16px 24px 20px; gap: 8px;
     }
-    .fin-btn-save {
-      background: linear-gradient(135deg, #0D3B2E, #1A5C45);
+    .fin-btn-save-red {
+      background: linear-gradient(135deg, #7F1D1D, #B91C1C);
       border: none; border-radius: 10px; font-weight: 700; padding: 10px 24px;
       color: #fff; transition: all 0.2s;
     }
-    .fin-btn-save:hover {
-      background: linear-gradient(135deg, #0a2e23, #155039);
-      box-shadow: 0 4px 12px rgba(13,59,46,0.25); transform: translateY(-1px);
+    .fin-btn-save-red:hover {
+      background: linear-gradient(135deg, #6B1616, #991B1B);
+      box-shadow: 0 4px 12px rgba(185,28,28,0.25); transform: translateY(-1px);
     }
     .fin-btn-cancel {
       background: #F3F4F6; border: 1px solid #E5E7EB; color: #374151;
@@ -147,18 +173,18 @@ const DonationList = ({ onUpdate }) => {
     <>
       <style>{modalStyle}</style>
       <CrudLayout
-        title="Pemasukan & Donasi"
+        title="Pengeluaran"
         columns={columns}
         data={data}
         onCreate={() => openModal()}
         onEdit={(item) => openModal(item)}
         onDelete={handleDelete}
-        emptyMessage="Belum ada data pemasukan. Mulai catat donasi/infaq pertama."
+        emptyMessage="Belum ada data pengeluaran. Mulai catat pengeluaran pertama."
       />
 
       <Modal show={showModal} onHide={() => setShowModal(false)} centered className="fin-modal">
         <Modal.Header closeButton>
-          <Modal.Title>{formData.id ? "Edit" : "Catat"} Pemasukan</Modal.Title>
+          <Modal.Title>{formData.id ? "Edit" : "Catat"} Pengeluaran</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSave}>
           <Modal.Body>
@@ -168,21 +194,17 @@ const DonationList = ({ onUpdate }) => {
                 required
                 type="date"
                 value={formData.date}
-                onChange={(e) =>
-                  setFormData({ ...formData, date: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Nama Donatur</Form.Label>
+              <Form.Label>Deskripsi</Form.Label>
               <Form.Control
                 required
                 type="text"
-                placeholder="Hamba Allah"
-                value={formData.donor}
-                onChange={(e) =>
-                  setFormData({ ...formData, donor: e.target.value })
-                }
+                placeholder="Contoh: Bayar listrik bulan Juni"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -195,40 +217,44 @@ const DonationList = ({ onUpdate }) => {
                   min="0"
                   placeholder="0"
                   value={formData.amount}
-                  onChange={(e) =>
-                    setFormData({ ...formData, amount: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   style={{ borderLeft: "none", borderRadius: "0 10px 10px 0" }}
                 />
               </InputGroup>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Jenis</Form.Label>
+              <Form.Label>Kategori</Form.Label>
               <Form.Select
-                value={formData.type}
-                onChange={(e) =>
-                  setFormData({ ...formData, type: e.target.value })
-                }
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               >
-                <option>Infaq Jumat</option>
-                <option>Infaq Harian</option>
-                <option>Shodaqoh</option>
-                <option>Zakat</option>
-                <option>Wakaf</option>
-                <option>Donasi Program</option>
+                <option>Operasional</option>
+                <option>Listrik & Air</option>
+                <option>Renovasi</option>
+                <option>Kebersihan</option>
+                <option>Honorarium</option>
+                <option>Kegiatan</option>
+                <option>Konsumsi</option>
                 <option>Lainnya</option>
               </Form.Select>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Keterangan <span className="text-muted fw-normal">(opsional)</span></Form.Label>
+              <Form.Label>Penerima <span className="text-muted fw-normal">(opsional)</span></Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Nama penerima pembayaran"
+                value={formData.recipient}
+                onChange={(e) => setFormData({ ...formData, recipient: e.target.value })}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Catatan <span className="text-muted fw-normal">(opsional)</span></Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}
                 placeholder="Catatan tambahan..."
                 value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
             </Form.Group>
           </Modal.Body>
@@ -236,7 +262,7 @@ const DonationList = ({ onUpdate }) => {
             <Button className="fin-btn-cancel" onClick={() => setShowModal(false)}>
               Batal
             </Button>
-            <Button className="fin-btn-save" type="submit">
+            <Button className="fin-btn-save-red" type="submit">
               Simpan
             </Button>
           </Modal.Footer>
@@ -246,4 +272,4 @@ const DonationList = ({ onUpdate }) => {
   );
 };
 
-export default DonationList;
+export default ExpenseList;

@@ -20,7 +20,7 @@ import DKMList from "./pages/dashboard/admin/DKMList";
 import JamaahList from "./pages/dashboard/admin/JamaahList";
 import ProgramList from "./pages/dashboard/activities/ProgramList";
 
-import DonationList from "./pages/dashboard/finance/DonationList";
+import FinanceDashboard from "./pages/dashboard/finance/FinanceDashboard";
 import ArticleList from "./pages/dashboard/info/ArticleList";
 import GalleryList from "./pages/dashboard/info/GalleryList";
 import HomeEditor from "./pages/dashboard/editor/HomeEditor";
@@ -65,7 +65,7 @@ function App() {
 
 
             {/* Finance Modules */}
-            <Route path="finance/donations" element={<DonationList />} />
+            <Route path="finance" element={<FinanceDashboard />} />
 
             {/* Info Modules */}
             <Route path="info/articles" element={<ArticleList />} />
