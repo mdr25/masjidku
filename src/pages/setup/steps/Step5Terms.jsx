@@ -11,7 +11,7 @@ const Step5Terms = ({ data, updateData, onNext }) => {
     if (!data.domain || !data.templateId) return false;
     const i = data.info;
     if (!i.name || !i.address || !i.email || !i.province || !i.city || !i.district || !i.contact) return false;
-    if (!data.files.wakaf || !data.files.sk) return false;
+    // Step 4 Verification dipotong (tidak wajib diisi untuk aktivasi awal)
     return true;
   };
 
