@@ -44,10 +44,14 @@ const TvDisplay = () => {
         const kajianRes = await publicService.getMasjidPosts(slug, "kajian");
         const kajianList = kajianRes.data?.data || [];
         
-        // Extract images from kajian, fallback to placeholder if none
-        let extractedSlides = kajianList
-          .filter(k => k.image_url || k.thumbnail)
-          .map(k => k.image_url || k.thumbnail);
+        // Ambil data Galeri dari LocalStorage
+        const gallery = JSON.parse(localStorage.getItem(`mid_gallery_${slug}`) || "[]");
+        
+        // Gabungkan gambar dari Galeri dan Kajian
+        let extractedSlides = [
+          ...gallery.map(g => g.image_url || g.url || g.image || g.thumbnail),
+          ...kajianList.map(k => k.image_url || k.thumbnail)
+        ].filter(Boolean); // Hapus yang kosong
         
         if (extractedSlides.length === 0) {
           // Default beautiful mosque pictures for idle slideshow
