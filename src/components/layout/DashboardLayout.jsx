@@ -47,7 +47,6 @@ const DashboardLayout = () => {
     { path: "/app/content",   icon: <FaThLarge size={18} />,    label: "Kelola Konten" },
     { path: "/app/finance",   icon: <FaWallet size={17} />,     label: "Keuangan" },
     { path: "/app/appearance", icon: <FaPaintBrush size={16} />, label: "Tampilan" },
-    { path: "/app/settings",  icon: <FaCog size={18} />,        label: "Pengaturan" },
   ];
 
   const sw = collapsed ? SIDEBAR_COLLAPSED_W : SIDEBAR_W;
