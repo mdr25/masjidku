@@ -13,6 +13,7 @@ import SetupWizard from "./pages/setup/SetupWizard";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import MosqueProfile from "./pages/dashboard/MosqueProfile";
 import LandingPage from "./pages/public/LandingPage";
+import TvDisplay from "./pages/public/TvDisplay";
 import PreviewPage from "./pages/dashboard/PreviewPage";
 import PrayerSchedule from "./pages/dashboard/activities/PrayerSchedule";
 import KajianList from "./pages/dashboard/activities/KajianList";
@@ -86,6 +87,7 @@ function App() {
 
         {/* Standalone Website Route */}
         <Route path="/website" element={<PreviewPage />} />
+        <Route path="/tv" element={<TvDisplay />} />
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" />} />

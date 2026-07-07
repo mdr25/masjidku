@@ -6,7 +6,7 @@ import { Modal, Button } from "react-bootstrap";
 import {
   FaHome, FaMosque, FaCog, FaSignOutAlt, FaUserCircle,
   FaDesktop, FaThLarge, FaChevronLeft, FaBars, FaPaintBrush,
-  FaWallet,
+  FaWallet, FaTv,
 } from "react-icons/fa";
 import BrandLogo from "../common/BrandLogo";
 import { authService } from "../../services/apiClient";
@@ -187,6 +187,25 @@ const DashboardLayout = () => {
     }
     .db-sidebar.collapsed .btn-view-website-label { display: none; }
 
+    /* ── View TV button ── */
+    .btn-view-tv {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff; font-weight: 600;
+      font-size: 0.875rem; border-radius: 10px;
+      transition: all 0.2s; display: flex;
+      align-items: center; justify-content: center;
+      gap: 8px; width: 100%; padding: 10px 14px;
+      text-decoration: none; white-space: nowrap;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .btn-view-tv:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    .db-sidebar.collapsed .btn-view-tv-label { display: none; }
+
     /* ── Logout ── */
     .db-logout {
       color: rgba(255,255,255,0.45);
@@ -247,6 +266,11 @@ const DashboardLayout = () => {
       justify-content: center;
       gap: 0;
     }
+    .db-sidebar.collapsed .btn-view-tv {
+      padding: 10px;
+      justify-content: center;
+      gap: 0;
+    }
   `;
 
   useEffect(() => {
@@ -283,12 +307,16 @@ const DashboardLayout = () => {
 
         <hr className="db-divider" style={{ marginTop: 4 }} />
 
-        {/* Lihat Website */}
+        {/* Lihat Website & Mode TV */}
         {user?.isSetupComplete && (
           <div style={{ padding: "0 12px 10px" }}>
             <Link to="/website" target="_blank" className="btn-view-website">
               <FaDesktop size={15} />
               <span className="btn-view-website-label">Lihat Website</span>
+            </Link>
+            <Link to="/tv" target="_blank" className="btn-view-tv">
+              <FaTv size={15} />
+              <span className="btn-view-tv-label">Mode TV Masjid</span>
             </Link>
           </div>
         )}
