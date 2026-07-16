@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container, Row, Col, Modal } from "react-bootstrap";
 import {
   FaFacebook,
   FaInstagram,
@@ -74,8 +74,11 @@ const Template1 = ({ data }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("beranda");
-  // Active prayer detection
   const [activePrayer, setActivePrayer] = useState(null);
+
+  // ── Donation Modal ──
+  const [showDonationModal, setShowDonationModal] = useState(false);
+  const donationConfig = hdr.donation || null;
 
   useEffect(() => {
     let ticking = false;
@@ -663,7 +666,16 @@ const Template1 = ({ data }) => {
                 {ctaButtons
                   .filter((b) => b.show !== false)
                   .map((btn, i) => (
-                    <button key={i} className="t1-cta">
+                    <button
+                      key={i}
+                      className="t1-cta"
+                      onClick={(e) => {
+                        if (btn.label.toLowerCase().includes("donasi")) {
+                          e.preventDefault();
+                          setShowDonationModal(true);
+                        }
+                      }}
+                    >
                       <FaHeart size={10} /> {btn.label}
                     </button>
                   ))}
@@ -713,7 +725,17 @@ const Template1 = ({ data }) => {
           {ctaButtons
             .filter((b) => b.show !== false)
             .map((btn, i) => (
-              <button key={i} className="t1-cta w-100 justify-content-center">
+              <button
+                key={i}
+                className="t1-cta w-100 justify-content-center"
+                onClick={(e) => {
+                  if (btn.label.toLowerCase().includes("donasi")) {
+                    e.preventDefault();
+                    setMobileOpen(false);
+                    setShowDonationModal(true);
+                  }
+                }}
+              >
                 <FaHeart size={10} /> {btn.label}
               </button>
             ))}
@@ -1759,6 +1781,43 @@ const Template1 = ({ data }) => {
           </p>
         </Container>
       </footer>
+
+      {/* ── Donation Modal ── */}
+      <Modal show={showDonationModal} onHide={() => setShowDonationModal(false)} centered size="md">
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold" style={{ color: "#0F172A" }}>
+            Donasi & Infaq
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center px-4 pb-4">
+          <p className="text-muted mb-4">
+            {donationConfig?.description || "Mari salurkan infaq dan sedekah terbaik Anda untuk kemakmuran masjid."}
+          </p>
+          
+          <div className="bg-light p-3 rounded-4 mb-4" style={{ border: "2px dashed #0D3B2E" }}>
+            <h6 className="fw-bold text-dark mb-3">Scan QRIS</h6>
+            <img 
+              src={donationConfig?.qrisUrl || "https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg"} 
+              alt="QRIS Donasi" 
+              style={{ maxWidth: 220, height: "auto", margin: "0 auto", display: "block" }}
+            />
+          </div>
+
+          <div className="p-3 rounded-4 bg-light border text-start">
+            <span className="text-muted d-block small mb-1">Transfer Bank</span>
+            <div className="d-flex align-items-center justify-content-between">
+              <strong style={{ fontSize: "1.1rem", color: "#0D3B2E" }}>{donationConfig?.bankName || "BSI (Bank Syariah Indonesia)"}</strong>
+            </div>
+            <div className="my-2 p-2 rounded bg-white border d-flex align-items-center justify-content-between">
+              <code style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#0D3B2E" }}>
+                {donationConfig?.accountNumber || "7123456789"}
+              </code>
+            </div>
+            <span className="text-muted d-block small">Atas Nama:</span>
+            <strong style={{ color: "#0F172A" }}>{donationConfig?.accountName || "DKM MasjidKu"}</strong>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
