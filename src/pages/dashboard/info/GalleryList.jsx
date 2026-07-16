@@ -75,10 +75,34 @@ const GalleryList = () => {
   // Since backend returns "gallery/xxx.jpg", we prepend the storage URL
   const getFullUrl = (path) => {
     if (!path) return "";
-    if (path.startsWith("http")) return path;
+    if (path.startsWith("data:") || path.startsWith("blob:")) return path;
+    
     const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
     const baseUrl = apiUrl.replace(/\/api$/, "");
-    return `${baseUrl}/storage/${path}`;
+    
+    if (path.startsWith("http")) {
+      if (path.startsWith("http://localhost") || path.startsWith("http://127.0.0.1")) {
+        try {
+          const urlObj = new URL(path);
+          path = urlObj.pathname;
+        } catch (e) {
+          return path;
+        }
+      } else {
+        return path;
+      }
+    }
+    
+    let cleanPath = path;
+    if (cleanPath.startsWith("/storage/")) {
+      cleanPath = cleanPath.substring(9);
+    } else if (cleanPath.startsWith("storage/")) {
+      cleanPath = cleanPath.substring(8);
+    } else if (cleanPath.startsWith("/")) {
+      cleanPath = cleanPath.substring(1);
+    }
+    
+    return `${baseUrl}/storage/${cleanPath}`;
   };
 
   /* ── Toast ── */

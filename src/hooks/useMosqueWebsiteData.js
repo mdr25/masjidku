@@ -13,14 +13,25 @@ function getFullUrl(path) {
     if (path.startsWith("http://localhost") || path.startsWith("http://127.0.0.1")) {
       try {
         const urlObj = new URL(path);
-        return `${baseUrl}${urlObj.pathname}`;
+        path = urlObj.pathname;
       } catch (e) {
         return path;
       }
+    } else {
+      return path;
     }
-    return path;
   }
-  return `${baseUrl}/storage/${path}`;
+  
+  let cleanPath = path;
+  if (cleanPath.startsWith("/storage/")) {
+    cleanPath = cleanPath.substring(9);
+  } else if (cleanPath.startsWith("storage/")) {
+    cleanPath = cleanPath.substring(8);
+  } else if (cleanPath.startsWith("/")) {
+    cleanPath = cleanPath.substring(1);
+  }
+  
+  return `${baseUrl}/storage/${cleanPath}`;
 }
 
 export const useMosqueWebsiteData = (slug) => {
