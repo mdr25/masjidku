@@ -52,7 +52,7 @@ const Step6Finish = ({ data }) => {
         <Row className="g-3 text-start">
           {[
             { icon: <FaMosque size={16} />, title: "Lengkapi Profil Masjid", desc: "Tambahkan foto, deskripsi, dan informasi kontak." },
-            { icon: <FaThLarge size={16} />, title: "Tambahkan Konten", desc: "Buat artikel, program, dan jadwal kajian." },
+            { icon: <FaThLarge size={16} />, title: "Tambahkan Konten", desc: "Buat berita, program, dan jadwal kajian." },
           ].map((item, i) => (
             <Col md={6} key={i}>
               <div className="p-3 rounded-3 h-100"

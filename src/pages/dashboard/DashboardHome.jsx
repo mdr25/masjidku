@@ -161,10 +161,10 @@ const DashboardHome = () => {
   }
 
   // ── Derived stats ──
-  // Note: ArticleList saves type sebagai "artikel" atau "berita" (bukan "article")
-  const articles = posts.filter((p) => p.type === "artikel" || p.type === "berita" || p.type === "article");
-  const programs  = posts.filter((p) => p.type === "program");
-  const kajian    = posts.filter((p) => p.type === "kajian");
+  // Note: ArticleList saves type sebagai "berita"
+  const articles = posts.filter((p) => p.type === "berita");
+  const programs  = posts.filter((p) => p.type === "kegiatan");
+  const kajian    = posts.filter((p) => p.type === "pengumuman");
 
   const recentPosts = [...posts]
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -249,7 +249,7 @@ const DashboardHome = () => {
         <div className="db-card mb-4 p-0">
           <div className="d-flex align-items-stretch py-3">
             {[
-              { icon: <FaNewspaper size={16} />, label: "Artikel", value: articles.length, color: "#C62828" },
+              { icon: <FaNewspaper size={16} />, label: "Berita", value: articles.length, color: "#C62828" },
               { icon: <FaListAlt size={16} />, label: "Program", value: programs.length, color: "#E65100" },
               { icon: <FaBullhorn size={16} />, label: "Kajian", value: kajian.length, color: "#6A1B9A" },
               { icon: <FaClock size={16} />, label: "Terpublish", value: posts.filter(p => p.is_published).length, color: "#1A5C45" },
@@ -301,8 +301,8 @@ const DashboardHome = () => {
               </Row>
             </div>
 
-            {/* Tentang Masjid — Step3Info saves as 'description', MosqueProfile adds 'visiMisi' */}
-            {(profile?.description || profile?.visiMisi) && (
+            {/* Tentang Masjid — Step3Info saves as 'description' */}
+            {profile?.description && (
               <div className="db-card p-4 mb-3">
                 <SectionLabel>Tentang Masjid</SectionLabel>
                 {profile?.description && (
@@ -311,18 +311,6 @@ const DashboardHome = () => {
                       ? profile.description.slice(0, 300) + "..."
                       : profile.description}
                   </p>
-                )}
-                {profile?.visiMisi && (
-                  <>
-                    <div className="fw-semibold mb-1" style={{ fontSize: "0.9375rem", color: "#0D3B2E" }}>
-                      Visi &amp; Misi
-                    </div>
-                    <p className="text-muted mb-0" style={{ fontSize: "0.9375rem", lineHeight: 1.7 }}>
-                      {profile.visiMisi.length > 200
-                        ? profile.visiMisi.slice(0, 200) + "..."
-                        : profile.visiMisi}
-                    </p>
-                  </>
                 )}
               </div>
             )}
@@ -409,8 +397,8 @@ const DashboardHome = () => {
               <SectionLabel>Aksi Cepat</SectionLabel>
               {[
                 { label: "Edit Profil Masjid", to: "/app/profile", icon: <FaMosque size={13} /> },
-                { label: "Tambah Artikel", to: "/app/info/articles", icon: <FaNewspaper size={13} /> },
-                { label: "Tambah Program", to: "/app/activities/program/new", icon: <FaListAlt size={13} /> },
+                { label: "Tambah Berita", to: "/app/info/articles", icon: <FaNewspaper size={13} /> },
+                { label: "Tambah Program", to: "/app/activities/program", icon: <FaListAlt size={13} /> },
                 { label: "Tambah Kajian", to: "/app/activities/kajian", icon: <FaBullhorn size={13} /> },
               ].map((action, i) => (
                 <Link key={i} to={action.to}

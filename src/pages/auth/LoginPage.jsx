@@ -19,7 +19,12 @@ const LoginPage = () => {
     setLoading(true);
     try {
       await authService.login(email, password);
-      navigate("/app/dashboard");
+      const user = authService.getCurrentUser();
+      if (user?.role === "super_admin") {
+        navigate("/superadmin");
+      } else {
+        navigate("/app/dashboard");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Gagal masuk. Periksa email dan password Anda.");
     } finally {
@@ -198,9 +203,9 @@ const LoginPage = () => {
         {/* Feature list */}
         <div className="position-relative d-flex flex-column gap-3">
           {[
-            { title: "Kelola Konten Website", desc: "Header, hero, artikel, galeri dalam satu tempat." },
+            { title: "Kelola Konten Website", desc: "Header, hero, berita, galeri dalam satu tempat." },
             { title: "Jadwal & Program Masjid", desc: "Publikasikan kajian dan kegiatan dengan mudah." },
-            { title: "Profil Masjid Lengkap", desc: "Visi misi, alamat, dan foto masjid Anda." },
+            { title: "Profil Masjid Lengkap", desc: "Sejarah, alamat, dan foto masjid Anda." },
           ].map((f, i) => (
             <div key={i} className="auth-feature-card">
               <div className="auth-feature-dot mt-1"></div>

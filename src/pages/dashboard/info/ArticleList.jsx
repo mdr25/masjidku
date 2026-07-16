@@ -10,13 +10,9 @@ import { postService } from "../../../services/apiClient";
 /* ════════════════════════════════════════════════════════
    CONSTANTS
    ════════════════════════════════════════════════════════ */
-const TABS = [
-  { key: "artikel", label: "Artikel",  emoji: "📰" },
-  { key: "berita",  label: "Berita",   emoji: "📡" },
-];
 
 const EMPTY_FORM = {
-  title: "", author: "", date: "", excerpt: "", content: "",
+  title: "", author: "", category: "", date: "", excerpt: "", content: "",
   image: "", imageFile: null, is_published: true,
 };
 
@@ -35,7 +31,6 @@ const truncate = (str, n = 90) =>
    MAIN COMPONENT
    ════════════════════════════════════════════════════════ */
 const ArticleList = () => {
-  const [activeTab,  setActiveTab]  = useState("artikel");
   const [list,       setList]       = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState("");
@@ -60,10 +55,10 @@ const ArticleList = () => {
     setLoading(true);
     try {
       const res = await postService.getPosts();
-      const all = res.data?.data || [];
+      const loaded = res.data?.data || [];
       setList(
-        all
-          .filter((p) => p.type === "artikel" || p.type === "berita")
+        loaded
+          .filter((p) => p.type === "berita")
           .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
       );
     } catch (e) { console.error(e); }
@@ -98,12 +93,13 @@ const ArticleList = () => {
     setForm({
       title:       item.title      || "",
       author:      item.author     || "",
-      date:        item.date       || "",
+      category:    item.category   || "",
+      date:        item.article_date || item.date || "",
       excerpt:     item.excerpt    || "",
       content:     item.content    || "",
       image:       item.image      || "",
       imageFile:   null,
-      is_published: item.is_published !== false,
+      is_published: item.status ? item.status === "published" : (item.is_published !== false),
     });
     setImgPreview(item.image || "");
     setEditId(item.id);
@@ -154,21 +150,22 @@ const ArticleList = () => {
     setSaving(true);
     try {
       const payload = {
-        type:         activeTab,
+        type:         "berita",
         title:        form.title.trim(),
         author:       form.author.trim(),
-        date:         form.date,
+        category:     form.category.trim(),
+        article_date: form.date,
         excerpt:      form.excerpt.trim(),
         content:      form.content.trim(),
-        image:        form.image,
+        cover_image:  form.imageFile,
         is_published: form.is_published,
       };
       if (editId) {
         await postService.updatePost(editId, payload);
-        showToast("success", "Artikel berhasil diperbarui!");
+        showToast("success", "Berita berhasil diperbarui!");
       } else {
         await postService.createPost(payload);
-        showToast("success", "Artikel berhasil dibuat!");
+        showToast("success", "Berita berhasil dibuat!");
       }
       closePanel();
       load();
@@ -199,17 +196,20 @@ const ArticleList = () => {
 
   /* ── Toggle publish ── */
   const togglePublish = async (item) => {
+    const currentlyPublished = item.status === "published";
     try {
-      await postService.updatePost(item.id, { is_published: !item.is_published });
-      setList((p) => p.map((x) => x.id === item.id ? { ...x, is_published: !x.is_published } : x));
+      await postService.updatePost(item.id, { is_published: !currentlyPublished });
+      await load();
+      showToast("success", currentlyPublished ? "Berita dijadikan draft." : "Berita berhasil ditayangkan!");
     } catch (e) {
-      showToast("error", "Gagal mengubah status.");
+      const msg = e.response?.data?.message || "Gagal mengubah status.";
+      showToast("error", msg);
     }
   };
 
   /* ── Filtered list ── */
   const filtered = list.filter(
-    (x) => x.type === activeTab &&
+    (x) => x.type === "berita" &&
       (!search || x.title?.toLowerCase().includes(search.toLowerCase()) ||
         x.author?.toLowerCase().includes(search.toLowerCase()))
   );
@@ -223,13 +223,7 @@ const ArticleList = () => {
     .al-btn-back { display: inline-flex; align-items: center; gap: 8px; color: #6B7280; font-size: 0.875rem; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; background: #F5F6F8; border: 1px solid #EAECF0; transition: all 0.2s; margin-bottom: 16px; }
     .al-btn-back:hover { background: #EAECF0; color: #1a1a1a; }
 
-    /* Tabs */
-    .al-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
-    .al-tab { display: flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 10px; font-size: 0.875rem; font-weight: 700; border: 1.5px solid #EAECF0; background: #fff; color: #6B7280; cursor: pointer; transition: all 0.18s; }
-    .al-tab:hover { border-color: #C9A84C; color: #0D3B2E; }
-    .al-tab.active { background: linear-gradient(135deg,#0D3B2E,#1A5C45); border-color: transparent; color: #fff; box-shadow: 0 4px 12px rgba(13,59,46,0.25); }
-    .al-tab-count { background: rgba(255,255,255,0.25); border-radius: 99px; font-size: 0.6875rem; padding: 1px 7px; font-weight: 800; }
-    .al-tab:not(.active) .al-tab-count { background: #F0F2F5; color: #9AA3AF; }
+
 
     /* Search bar */
     .al-search-wrap { position: relative; flex: 1; max-width: 300px; }
@@ -357,35 +351,20 @@ const ArticleList = () => {
       <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#1a1a1a", marginBottom: 4, letterSpacing: "-0.3px" }}>
-            Artikel &amp; Berita
+            Berita Masjid
           </h1>
           <p style={{ fontSize: "0.9375rem", color: "#6B7280", margin: 0 }}>
-            Buat dan kelola konten artikel informatif dan berita terkini seputar masjid.
+            Buat dan kelola berita terkini seputar masjid.
           </p>
         </div>
         <button className="al-add-btn" onClick={openAdd}>
           <FaPlus size={12} />
-          Tulis {activeTab === "artikel" ? "Artikel" : "Berita"}
+          Tulis Berita
         </button>
       </div>
 
-      {/* ── Tabs + Search ── */}
-      <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
-        <div className="al-tabs">
-          {TABS.map(({ key, label, emoji }) => {
-            const count = list.filter((x) => x.type === key).length;
-            return (
-              <button
-                key={key}
-                className={`al-tab ${activeTab === key ? "active" : ""}`}
-                onClick={() => { setActiveTab(key); setSearch(""); }}
-              >
-                {emoji} {label}
-                <span className="al-tab-count">{count}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* ── Search ── */}
+      <div className="d-flex align-items-center justify-content-end flex-wrap gap-3 mb-4">
         <div className="al-search-wrap">
           <FaSearch size={12} className="al-search-ico" />
           <input
@@ -416,12 +395,12 @@ const ArticleList = () => {
         <div className="al-empty">
           <FaNewspaper size={42} />
           <div className="al-empty-title">
-            {search ? "Tidak ditemukan" : `Belum ada ${activeTab}`}
+            {search ? "Tidak ditemukan" : "Belum ada berita"}
           </div>
           <div className="al-empty-sub">
             {search
-              ? `Tidak ada hasil untuk "${search}".`
-              : `Klik "Tulis ${activeTab === "artikel" ? "Artikel" : "Berita"}" untuk mulai membuat konten baru.`}
+              ? `Tulis berita pertama Anda!`
+              : `Klik "Tulis Berita" untuk mulai membuat konten baru.`}
           </div>
         </div>
       ) : (
@@ -438,8 +417,8 @@ const ArticleList = () => {
               )}
               <div className="al-card-body">
                 <div className="al-card-meta">
-                  <span className={`al-badge ${item.is_published ? "pub" : "draft"}`}>
-                    {item.is_published ? "✓ Tayang" : "○ Draft"}
+                  <span className={`al-badge ${item.status === "published" ? "pub" : "draft"}`}>
+                    {item.status === "published" ? "✓ Tayang" : "○ Draft"}
                   </span>
                   {item.date && (
                     <span className="al-card-date">
@@ -461,10 +440,10 @@ const ArticleList = () => {
               <div className="al-card-actions">
                 <button
                   className="al-action-btn pub-btn"
-                  title={item.is_published ? "Jadikan Draft" : "Tayangkan"}
+                  title={item.status === "published" ? "Jadikan Draft" : "Tayangkan"}
                   onClick={() => togglePublish(item)}
                 >
-                  {item.is_published ? <FaEyeSlash size={13} /> : <FaEye size={13} />}
+                  {item.status === "published" ? <FaEyeSlash size={13} /> : <FaEye size={13} />}
                 </button>
                 <button
                   className="al-action-btn edit-btn"
@@ -493,7 +472,7 @@ const ArticleList = () => {
         {/* Header */}
         <div className="al-drawer-header">
           <div className="al-drawer-title">
-            {editId ? "Edit" : "Tulis"} {activeTab === "artikel" ? "Artikel" : "Berita"}
+            {editId ? "Edit" : "Tulis"} Berita
           </div>
           <button className="al-drawer-close" onClick={closePanel}><FaTimes size={14} /></button>
         </div>
@@ -501,21 +480,7 @@ const ArticleList = () => {
         {/* Body */}
         <div className="al-drawer-body">
 
-          {/* Tipe */}
-          <div className="al-field">
-            <label className="al-label">Jenis Konten</label>
-            <div className="al-type-row">
-              {TABS.map(({ key, label, emoji }) => (
-                <div
-                  key={key}
-                  className={`al-type-opt ${activeTab === key ? "active" : ""}`}
-                  onClick={() => setActiveTab(key)}
-                >
-                  <span>{emoji}</span> {label}
-                </div>
-              ))}
-            </div>
-          </div>
+
 
           {/* Judul */}
           <div className="al-field">
@@ -567,20 +532,30 @@ const ArticleList = () => {
             <p className="al-hint">Gambar tampil sebagai thumbnail di halaman website.</p>
           </div>
 
-          {/* Row: Penulis + Tanggal */}
+          {/* Row: Penulis, Kategori, Tanggal */}
           <div className="row g-3 mb-3">
-            <div className="col-7">
-              <label className="al-label">Penulis / Sumber</label>
+            <div className="col-4">
+              <label className="al-label">Penulis</label>
               <input
                 className="al-input"
                 type="text"
-                placeholder="Nama penulis atau sumber berita"
+                placeholder="Nama penulis"
                 value={form.author}
                 onChange={(e) => setForm((p) => ({ ...p, author: e.target.value }))}
               />
             </div>
-            <div className="col-5">
-              <label className="al-label">Tanggal Terbit</label>
+            <div className="col-4">
+              <label className="al-label">Kategori</label>
+              <input
+                className="al-input"
+                type="text"
+                placeholder="Kategori berita"
+                value={form.category}
+                onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+              />
+            </div>
+            <div className="col-4">
+              <label className="al-label">Tanggal</label>
               <input
                 className="al-input"
                 type="date"
@@ -600,7 +575,7 @@ const ArticleList = () => {
               value={form.excerpt}
               onChange={(e) => setForm((p) => ({ ...p, excerpt: e.target.value }))}
             />
-            <p className="al-hint">Tampil sebagai deskripsi di card artikel.</p>
+            <p className="al-hint">Tampil sebagai deskripsi di card berita.</p>
           </div>
 
           {/* Isi Konten */}
@@ -609,7 +584,7 @@ const ArticleList = () => {
             <textarea
               className={`al-input al-textarea al-textarea-tall`}
               rows={8}
-              placeholder="Tulis isi artikel atau berita di sini…"
+              placeholder="Tulis isi berita di sini…"
               value={form.content}
               onChange={(e) => setForm((p) => ({ ...p, content: e.target.value }))}
             />
@@ -651,7 +626,7 @@ const ArticleList = () => {
             <div className="al-modal-icon">
               <FaTrash size={18} style={{ color: "#EF4444" }} />
             </div>
-            <div className="al-modal-title">Hapus {deleteConfirm.type === "berita" ? "Berita" : "Artikel"}?</div>
+            <div className="al-modal-title">Hapus Berita?</div>
             <div className="al-modal-body">
               "<strong>{deleteConfirm.title}</strong>" akan dihapus secara permanen dan tidak bisa dikembalikan.
             </div>

@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import {
   Outlet, Link, useLocation, useNavigate
 } from "react-router-dom";
-import { Modal, Button } from "react-bootstrap";
+import { Modal, Button, Dropdown, Badge } from "react-bootstrap";
 import {
   FaHome, FaMosque, FaCog, FaSignOutAlt, FaUserCircle,
   FaDesktop, FaThLarge, FaChevronLeft, FaBars, FaPaintBrush,
-  FaWallet, FaTv,
+  FaWallet, FaTv, FaCheckCircle, FaExclamationTriangle, FaClock, FaTimesCircle
 } from "react-icons/fa";
 import BrandLogo from "../common/BrandLogo";
-import { authService } from "../../services/apiClient";
+import { authService, dashboardService } from "../../services/apiClient";
+import VerificationStatusModal from "../../pages/dashboard/VerificationStatusModal";
 
 const SIDEBAR_W = 240;
 const SIDEBAR_COLLAPSED_W = 64;
@@ -21,6 +22,18 @@ const DashboardLayout = () => {
   const userName = user?.name || "Admin Masjid";
   const initials = userName.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const [collapsed, setCollapsed] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+
+  const fetchProfile = () => {
+    dashboardService.getProfile().then(res => {
+      setProfile(res.data.data);
+    }).catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   const [showWelcome, setShowWelcome] = useState(() => {
     return !localStorage.getItem(`mid_welcome_seen_${user?.id}`);
@@ -45,7 +58,6 @@ const DashboardLayout = () => {
     { path: "/app/dashboard", icon: <FaHome size={18} />,        label: "Dashboard" },
     { path: "/app/profile",   icon: <FaMosque size={18} />,     label: "Profil Masjid" },
     { path: "/app/content",   icon: <FaThLarge size={18} />,    label: "Kelola Konten" },
-    { path: "/app/finance",   icon: <FaWallet size={17} />,     label: "Keuangan" },
     { path: "/app/appearance", icon: <FaPaintBrush size={16} />, label: "Tampilan" },
   ];
 
@@ -309,10 +321,17 @@ const DashboardLayout = () => {
         {/* Lihat Website & Mode TV */}
         {user?.isSetupComplete && (
           <div style={{ padding: "0 12px 10px" }}>
-            <Link to="/website" target="_blank" className="btn-view-website">
-              <FaDesktop size={15} />
-              <span className="btn-view-website-label">Lihat Website</span>
-            </Link>
+            {profile?.verification_status === "verified" ? (
+              <Link to={`/masjid/${user?.slug || user?.mosque_slug}`} target="_blank" className="btn-view-website">
+                <FaDesktop size={15} />
+                <span className="btn-view-website-label">Lihat Website</span>
+              </Link>
+            ) : (
+              <Link to="/website" target="_blank" className="btn-view-website" style={{ background: "linear-gradient(135deg, #6B7280 0%, #4B5563 100%)" }}>
+                <FaDesktop size={15} />
+                <span className="btn-view-website-label">Mode Preview</span>
+              </Link>
+            )}
             <Link to="/tv" target="_blank" className="btn-view-tv">
               <FaTv size={15} />
               <span className="btn-view-tv-label">Mode TV Masjid</span>
@@ -359,18 +378,33 @@ const DashboardLayout = () => {
       >
         {/* Topbar */}
         <div className="db-topbar">
-          <div className="d-flex align-items-center gap-3">
-            <div className="text-end lh-sm">
-              <div style={{ fontWeight: 600, fontSize: "0.9375rem", color: "#1a1a1a" }}>
-                {userName}
+          <Dropdown align="end">
+            <Dropdown.Toggle as="div" style={{ cursor: "pointer" }} className="d-flex align-items-center gap-3">
+              <div className="text-end lh-sm">
+                <div style={{ fontWeight: 600, fontSize: "0.9375rem", color: "#1a1a1a" }}>
+                  {userName}
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "#9AA3AF" }}>Pengurus Masjid</div>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#9AA3AF" }}>Pengurus Masjid</div>
-            </div>
-            <div className="d-flex align-items-center justify-content-center rounded-circle fw-bold"
-              style={{ width: 38, height: 38, background: "linear-gradient(135deg, #0D3B2E, #1A5C45)", color: "#fff", fontSize: "0.9rem" }}>
-              {initials}
-            </div>
-          </div>
+              <div className="d-flex align-items-center justify-content-center rounded-circle fw-bold"
+                style={{ width: 38, height: 38, background: "linear-gradient(135deg, #0D3B2E, #1A5C45)", color: "#fff", fontSize: "0.9rem" }}>
+                {initials}
+              </div>
+            </Dropdown.Toggle>
+            <Dropdown.Menu className="shadow border-0 mt-2" style={{ width: 220, borderRadius: 12 }}>
+              <Dropdown.Item onClick={() => setShowStatusModal(true)} className="d-flex align-items-center gap-2 py-2">
+                <FaCheckCircle color="#9AA3AF" />
+                <span>Status Verifikasi</span>
+                {profile?.verification_status === "verified" && <Badge bg="success" className="ms-auto" style={{ fontSize: "0.65rem" }}>OK</Badge>}
+                {profile?.verification_status === "rejected" && <Badge bg="danger" className="ms-auto" style={{ fontSize: "0.65rem" }}>!</Badge>}
+              </Dropdown.Item>
+              <Dropdown.Divider />
+              <Dropdown.Item onClick={handleLogout} className="d-flex align-items-center gap-2 py-2 text-danger">
+                <FaSignOutAlt />
+                <span>Keluar</span>
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </div>
 
         {/* Setup Warning */}
@@ -386,6 +420,47 @@ const DashboardLayout = () => {
             <Link to="/setup" style={{ background: "linear-gradient(135deg,#0D3B2E,#1A5C45)", color: "#fff", borderRadius: 8, padding: "7px 16px", fontSize: "0.8125rem", fontWeight: 600, textDecoration: "none" }}>
               Lengkapi Setup
             </Link>
+          </div>
+        )}
+
+        {/* Verification Banner */}
+        {user?.isSetupComplete && profile?.verification_status === "rejected" && (
+          <div className="px-4 py-3 d-flex justify-content-between align-items-center" style={{ background: "#FEF2F2", borderBottom: "1px solid #FECACA" }}>
+            <div className="d-flex align-items-center gap-2">
+              <FaTimesCircle color="#DC2626" size={18} />
+              <div>
+                <strong style={{ fontSize: "0.875rem", color: "#991B1B" }}>Verifikasi Ditolak</strong>
+                <span className="ms-2" style={{ fontSize: "0.8125rem", color: "#B91C1C" }}>— Terdapat masalah pada dokumen Anda. Silakan periksa.</span>
+              </div>
+            </div>
+            <Button size="sm" variant="danger" onClick={() => setShowStatusModal(true)} style={{ borderRadius: 8, fontWeight: 600 }}>
+              Perbaiki Berkas
+            </Button>
+          </div>
+        )}
+
+        {user?.isSetupComplete && profile?.verification_status === "submitted" && (
+          <div className="px-4 py-3 d-flex align-items-center gap-2" style={{ background: "#FFFBEB", borderBottom: "1px solid #FDE68A" }}>
+            <FaClock color="#D97706" size={18} />
+            <div>
+              <strong style={{ fontSize: "0.875rem", color: "#92400E" }}>Menunggu Verifikasi</strong>
+              <span className="ms-2" style={{ fontSize: "0.8125rem", color: "#B45309" }}>— Dokumen Anda sedang ditinjau. Maksimal 2x24 jam.</span>
+            </div>
+          </div>
+        )}
+
+        {user?.isSetupComplete && (!profile?.verification_status || profile?.verification_status === "draft") && (
+          <div className="px-4 py-3 d-flex justify-content-between align-items-center" style={{ background: "#F3F4F6", borderBottom: "1px solid #E5E7EB" }}>
+            <div className="d-flex align-items-center gap-2">
+              <FaExclamationTriangle color="#4B5563" size={18} />
+              <div>
+                <strong style={{ fontSize: "0.875rem", color: "#374151" }}>Belum Mengajukan Verifikasi</strong>
+                <span className="text-muted ms-2" style={{ fontSize: "0.8125rem" }}>— Website publik tidak aktif tanpa verifikasi berkas legal.</span>
+              </div>
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => setShowStatusModal(true)} style={{ borderRadius: 8, fontWeight: 600 }}>
+              Mulai Verifikasi
+            </Button>
           </div>
         )}
 
@@ -437,6 +512,13 @@ const DashboardLayout = () => {
           </div>
         </Modal.Body>
       </Modal>
+
+      <VerificationStatusModal 
+        show={showStatusModal} 
+        onHide={() => setShowStatusModal(false)}
+        profile={profile}
+        onStatusUpdate={fetchProfile}
+      />
     </div>
   );
 };

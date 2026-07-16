@@ -184,35 +184,7 @@ const Template1 = ({ data }) => {
           },
         ];
 
-  const programs =
-    data?.programs?.length > 0
-      ? data.programs
-      : [
-          {
-            id: 1,
-            title: "TPQ Ibnu Sina",
-            image:
-              "https://images.unsplash.com/photo-1712249239167-18cb9e056ee6?q=80&w=2070&auto=format&fit=crop",
-          },
-          {
-            id: 2,
-            title: "Ngaji Ahad Pagi",
-            image:
-              "https://images.unsplash.com/photo-1547119846-7d4039e02077?q=80&w=1170&auto=format&fit=crop",
-          },
-          {
-            id: 3,
-            title: "Wakaf & Infaq",
-            image:
-              "https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&q=80&w=800",
-          },
-          {
-            id: 4,
-            title: "Tahsin Al-Quran",
-            image:
-              "https://images.unsplash.com/photo-1649030839339-3d117544fcb4?q=80&w=1132&auto=format&fit=crop",
-          },
-        ];
+  const programs = data?.programs || [];
 
   // kajian: gunakan data dari dashboard, fallback ke contoh statis
   const kajian =
@@ -910,467 +882,511 @@ const Template1 = ({ data }) => {
       )}
 
       {/* ═══════════════════════════════════════════ PROFIL ═══ */}
-      <section id="profil" className="py-5 bg-white">
-        <Container className="py-5">
-          <Row className="align-items-center g-5">
-            <Col md={6}>
-              <img
-                src={
-                  data?.profile?.image ||
-                  "https://images.unsplash.com/flagged/photo-1554398912-87ad6a73dbb6?q=80&w=1074&auto=format&fit=crop"
-                }
-                style={{
-                  width: "100%",
-                  height: 420,
-                  objectFit: "cover",
-                  borderRadius: 20,
-                }}
-                alt="Profil Masjid"
-              />
-            </Col>
-            <Col md={6}>
-              <div className="t1-section-chip">Tentang Kami</div>
-              <h2 className="fw-bold mb-4">Profil {profile.name}</h2>
-              <div
-                style={{
-                  color: "#6B7280",
-                  lineHeight: 1.8,
-                  fontSize: "0.9375rem",
-                  marginBottom: 24,
-                }}
-              >
-                {data?.profile?.description || data?.profile?.about ? (
-                  (data.profile.description || data.profile.about)
-                    .split("\n")
-                    .map((p, i) => <p key={i}>{p}</p>)
-                ) : (
-                  <p>
-                    Masjid {profile.name} adalah pusat peribadatan dan kegiatan
-                    umat Islam yang berkomitmen melayani jamaah dengan
-                    sebaik-baiknya.
-                  </p>
+      {menuVis.profil !== false && (
+        <section id="profil" className="py-5 bg-white">
+          <Container className="py-5">
+            <Row className="align-items-center g-5">
+              <Col md={6}>
+                <img
+                  src={
+                    data?.profile?.image ||
+                    "https://images.unsplash.com/flagged/photo-1554398912-87ad6a73dbb6?q=80&w=1074&auto=format&fit=crop"
+                  }
+                  style={{
+                    width: "100%",
+                    height: 420,
+                    objectFit: "cover",
+                    borderRadius: 20,
+                  }}
+                  alt="Profil Masjid"
+                />
+              </Col>
+              <Col md={6}>
+                <div className="t1-section-chip">Tentang Kami</div>
+                <h2 className="fw-bold mb-4">Profil {profile.name}</h2>
+                <div
+                  style={{
+                    color: "#6B7280",
+                    lineHeight: 1.8,
+                    fontSize: "0.9375rem",
+                    marginBottom: 24,
+                  }}
+                >
+                  {data?.profile?.description || data?.profile?.about ? (
+                    (data.profile.description || data.profile.about)
+                      .split("\n")
+                      .map((p, i) => <p key={i}>{p}</p>)
+                  ) : (
+                    <p>
+                      Masjid {profile.name} adalah pusat peribadatan dan kegiatan
+                      umat Islam yang berkomitmen melayani jamaah dengan
+                      sebaik-baiknya.
+                    </p>
+                  )}
+                </div>
+                {data?.profile?.visiMisi && (
+                  <>
+                    <h5 className="fw-bold mb-2" style={{ color: "#0D3B2E" }}>
+                      Visi &amp; Misi
+                    </h5>
+                    <div
+                      style={{
+                        color: "#6B7280",
+                        lineHeight: 1.8,
+                        fontSize: "0.875rem",
+                        marginBottom: 24,
+                      }}
+                    >
+                      {data.profile.visiMisi.split("\n").map((p, i) => (
+                        <p key={i}>{p}</p>
+                      ))}
+                    </div>
+                  </>
                 )}
-              </div>
-              {data?.profile?.visiMisi && (
-                <>
-                  <h5 className="fw-bold mb-2" style={{ color: "#0D3B2E" }}>
-                    Visi &amp; Misi
-                  </h5>
-                  <div
-                    style={{
-                      color: "#6B7280",
-                      lineHeight: 1.8,
-                      fontSize: "0.875rem",
-                      marginBottom: 24,
-                    }}
-                  >
-                    {data.profile.visiMisi.split("\n").map((p, i) => (
-                      <p key={i}>{p}</p>
-                    ))}
-                  </div>
-                </>
-              )}
-              <button className="t1-gold-btn">
-                Selengkapnya <FaArrowRight size={13} />
-              </button>
-            </Col>
-          </Row>
-        </Container>
-      </section>
+                <button className="t1-gold-btn">
+                  Selengkapnya <FaArrowRight size={13} />
+                </button>
+              </Col>
+            </Row>
+          </Container>
+        </section>
+      )}
 
       {/* ══════════════════════════════════════════ PROGRAM ═══ */}
-      <section
-        id="program"
-        style={{ background: "#F9FAF8", padding: "80px 0" }}
-      >
-        <Container>
-          <div className="text-center mb-5">
-            <div className="t1-section-chip">Kegiatan</div>
-            <h2 className="fw-bold" style={{ color: "#1a1a1a" }}>
-              Program Masjid
-            </h2>
-          </div>
-          <Row className="g-3">
-            {programs.map((prog, i) => (
-              <Col md={6} key={i}>
-                <div className="t1-prog-card">
-                  <img src={prog.image} alt={prog.title} />
-                  <div className="label">
-                    <h5>{prog.title}</h5>
-                  </div>
-                </div>
-              </Col>
-            ))}
-          </Row>
-          <div className="text-center mt-4">
-            <button className="t1-gold-btn">
-              Lihat Semua Program <FaArrowRight size={13} />
-            </button>
-          </div>
-        </Container>
-      </section>
-      {/* ══════════════════════════════════════════ KAJIAN ══════ */}
-      <section id="kajian" className="py-5 bg-white">
-        <Container className="py-4">
-          <div className="text-center mb-5">
-            <div className="t1-section-chip">Kajian Islam</div>
-            <h2
-              className="fw-bold"
-              style={{ color: "#1a1a1a", marginBottom: 8 }}
-            >
-              Jadwal Kajian
-            </h2>
-            <p
-              style={{
-                color: "#6B7280",
-                fontSize: "0.9375rem",
-                maxWidth: 480,
-                margin: "0 auto",
-              }}
-            >
-              Ikuti kajian rutin bersama para ustadz pilihan di masjid kami.
-            </p>
-          </div>
-          <Row className="g-4">
-            {kajian.map((item, i) => {
-              // Format tanggal
-              const dateStr = item.date
-                ? new Date(item.date + "T00:00:00").toLocaleDateString(
-                    "id-ID",
-                    {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    },
-                  )
-                : null;
-              return (
-                <Col md={6} lg={4} key={item.id || i}>
-                  <div
-                    style={{
-                      background: "#FAFBFA",
-                      border: "1px solid #EAECF0",
-                      borderRadius: 16,
-                      overflow: "hidden",
-                      transition: "all 0.25s ease",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-4px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 12px 32px rgba(13,59,46,0.1)";
-                      e.currentTarget.style.borderColor = "rgba(26,92,69,0.25)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "";
-                      e.currentTarget.style.boxShadow = "";
-                      e.currentTarget.style.borderColor = "#EAECF0";
-                    }}
-                  >
-                    {/* Color bar top */}
-                    <div
-                      style={{
-                        height: 4,
-                        background: "linear-gradient(90deg, #1A5C45, #C9A84C)",
-                      }}
-                    />
-
-                    {/* Foto jika ada */}
-                    {item.image && (
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        style={{
-                          width: "100%",
-                          height: 160,
-                          objectFit: "cover",
-                          display: "block",
-                        }}
-                        onError={(e) => (e.target.style.display = "none")}
-                      />
-                    )}
-
-                    <div
-                      style={{
-                        padding: "20px",
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <h5
-                        style={{
-                          fontWeight: 800,
-                          color: "#1a1a1a",
-                          fontSize: "1rem",
-                          lineHeight: 1.35,
-                          marginBottom: 12,
-                        }}
+      {menuVis.program !== false && (
+        <section
+          id="program"
+          style={{ background: "#F9FAF8", padding: "80px 0" }}
+        >
+          <Container>
+            <div className="text-center mb-5">
+              <div className="t1-section-chip">Kegiatan</div>
+              <h2 className="fw-bold" style={{ color: "#1a1a1a" }}>
+                Program Masjid
+              </h2>
+            </div>
+            <Row className="g-3">
+              {programs.length > 0 ? (
+                programs.map((prog, i) => (
+                  <Col md={6} key={i}>
+                    {prog.link ? (
+                      <a
+                        href={prog.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="t1-prog-card d-block text-decoration-none"
                       >
-                        {item.title}
-                      </h5>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 7,
-                          marginBottom: 16,
-                          flex: 1,
-                        }}
-                      >
-                        {item.speaker && (
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                            }}
-                          >
-                            <span
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: 6,
-                                background: "rgba(26,92,69,0.1)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                                fontSize: "0.75rem",
-                              }}
-                            >
-                              👤
-                            </span>
-                            <span
-                              style={{
-                                fontSize: "0.875rem",
-                                color: "#344054",
-                                fontWeight: 600,
-                              }}
-                            >
-                              {item.speaker}
-                            </span>
-                          </div>
-                        )}
-                        {dateStr && (
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                            }}
-                          >
-                            <span
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: 6,
-                                background: "rgba(201,168,76,0.12)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                                fontSize: "0.75rem",
-                              }}
-                            >
-                              📅
-                            </span>
-                            <span
-                              style={{
-                                fontSize: "0.8125rem",
-                                color: "#6B7280",
-                              }}
-                            >
-                              {dateStr}
-                              {item.time ? " · " + item.time + " WIB" : ""}
-                            </span>
-                          </div>
-                        )}
-                        {item.location && (
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                            }}
-                          >
-                            <span
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: 6,
-                                background: "rgba(26,92,69,0.1)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                                fontSize: "0.75rem",
-                              }}
-                            >
-                              📍
-                            </span>
-                            <span
-                              style={{
-                                fontSize: "0.8125rem",
-                                color: "#6B7280",
-                              }}
-                            >
-                              {item.location}
-                            </span>
-                          </div>
-                        )}
+                        <img
+                          src={
+                            prog.image ||
+                            "https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&q=80&w=800"
+                          }
+                          alt={prog.title}
+                          onError={(e) => (e.target.style.opacity = 0.4)}
+                        />
+                        <div className="label">
+                          <h5>{prog.title}</h5>
+                        </div>
+                      </a>
+                    ) : (
+                      <div className="t1-prog-card">
+                        <img
+                          src={
+                            prog.image ||
+                            "https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&q=80&w=800"
+                          }
+                          alt={prog.title}
+                          onError={(e) => (e.target.style.opacity = 0.4)}
+                        />
+                        <div className="label">
+                          <h5>{prog.title}</h5>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                  </Col>
+                ))
+              ) : (
+                <Col md={12}>
+                  <div style={{ padding: "60px 20px", textAlign: "center", background: "#fff", borderRadius: 16, border: "1px solid #EAECF0" }}>
+                    <FaMosque size={48} color="#D0D5DD" style={{ marginBottom: 16 }} />
+                    <h5 style={{ color: "#344054", fontWeight: 700 }}>Belum Ada Program</h5>
+                    <p style={{ color: "#667085", fontSize: "0.9375rem" }}>Nantikan berbagai program dan kegiatan menarik dari masjid kami.</p>
                   </div>
                 </Col>
-              );
-            })}
-          </Row>
-        </Container>
-      </section>
-
-      <section id="artikel" className="py-5 bg-white">
-        <Container className="py-4">
-          <div className="text-center mb-5">
-            <div className="t1-section-chip">Informasi</div>
-            <h2 className="fw-bold" style={{ color: "#1a1a1a" }}>
-              Artikel &amp; Berita
-            </h2>
-          </div>
-          <Row className="g-4">
-            {articles.map((item, i) => {
-              const articleDate = item.date
-                ? new Date(item.date + "T00:00:00").toLocaleDateString(
-                    "id-ID",
-                    { day: "numeric", month: "long", year: "numeric" },
-                  )
-                : item.created_at
-                  ? new Date(item.created_at).toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })
-                  : "";
-              const summary = item.excerpt || item.summary || "";
-              const typeLabel = item.type === "berita" ? "Berita" : "Artikel";
-              return (
-                <Col lg={6} key={item.id || i}>
-                  <div
-                    className="t1-art-card"
-                    style={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        onError={(e) => (e.target.style.display = "none")}
-                      />
-                    ) : (
+              )}
+            </Row>
+            <div className="text-center mt-4">
+              <button className="t1-gold-btn">
+                Lihat Semua Program <FaArrowRight size={13} />
+              </button>
+            </div>
+          </Container>
+        </section>
+      )}
+      {/* ══════════════════════════════════════════ KAJIAN ══════ */}
+      {menuVis.kajian !== false && (
+        <section id="kajian" className="py-5 bg-white">
+          <Container className="py-4">
+            <div className="text-center mb-5">
+              <div className="t1-section-chip">Kajian Islam</div>
+              <h2
+                className="fw-bold"
+                style={{ color: "#1a1a1a", marginBottom: 8 }}
+              >
+                Jadwal Kajian
+              </h2>
+              <p
+                style={{
+                  color: "#6B7280",
+                  fontSize: "0.9375rem",
+                  maxWidth: 480,
+                  margin: "0 auto",
+                }}
+              >
+                Ikuti kajian rutin bersama para ustadz pilihan di masjid kami.
+              </p>
+            </div>
+            <Row className="g-4">
+              {kajian.map((item, i) => {
+                // Format tanggal
+                const dateStr = item.date
+                  ? new Date(item.date + "T00:00:00").toLocaleDateString(
+                      "id-ID",
+                      {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      },
+                    )
+                  : null;
+                return (
+                  <Col md={6} lg={4} key={item.id || i}>
+                    <div
+                      style={{
+                        background: "#FAFBFA",
+                        border: "1px solid #EAECF0",
+                        borderRadius: 16,
+                        overflow: "hidden",
+                        transition: "all 0.25s ease",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-4px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 12px 32px rgba(13,59,46,0.1)";
+                        e.currentTarget.style.borderColor = "rgba(26,92,69,0.25)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "";
+                        e.currentTarget.style.boxShadow = "";
+                        e.currentTarget.style.borderColor = "#EAECF0";
+                      }}
+                    >
+                      {/* Color bar top */}
                       <div
                         style={{
-                          width: "100%",
-                          height: 200,
-                          background:
-                            "linear-gradient(135deg, #F0F7F4, #E8F5E9)",
+                          height: 4,
+                          background: "linear-gradient(90deg, #1A5C45, #C9A84C)",
+                        }}
+                      />
+
+                      {/* Foto jika ada */}
+                      {item.image && (
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          style={{
+                            width: "100%",
+                            height: 160,
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                          onError={(e) => (e.target.style.display = "none")}
+                        />
+                      )}
+
+                      <div
+                        style={{
+                          padding: "20px",
+                          flex: 1,
                           display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#C9CDD4",
-                          fontSize: "2rem",
+                          flexDirection: "column",
                         }}
                       >
-                        🕌
+                        <h5
+                          style={{
+                            fontWeight: 800,
+                            color: "#1a1a1a",
+                            fontSize: "1rem",
+                            lineHeight: 1.35,
+                            marginBottom: 12,
+                          }}
+                        >
+                          {item.title}
+                        </h5>
+
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 7,
+                            marginBottom: 16,
+                            flex: 1,
+                          }}
+                        >
+                          {item.speaker && (
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 24,
+                                  height: 24,
+                                  borderRadius: 6,
+                                  background: "rgba(26,92,69,0.1)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                👤
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: "0.875rem",
+                                  color: "#344054",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {item.speaker}
+                              </span>
+                            </div>
+                          )}
+                          {dateStr && (
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 24,
+                                  height: 24,
+                                  borderRadius: 6,
+                                  background: "rgba(201,168,76,0.12)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                📅
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: "0.8125rem",
+                                  color: "#6B7280",
+                                }}
+                              >
+                                {dateStr}
+                                {item.time ? " · " + item.time + " WIB" : ""}
+                              </span>
+                            </div>
+                          )}
+                          {item.location && (
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 24,
+                                  height: 24,
+                                  borderRadius: 6,
+                                  background: "rgba(26,92,69,0.1)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                📍
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: "0.8125rem",
+                                  color: "#6B7280",
+                                }}
+                              >
+                                {item.location}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </div>
+                  </Col>
+                );
+              })}
+            </Row>
+          </Container>
+        </section>
+      )}
+
+      {menuVis.artikel !== false && (
+        <section id="artikel" className="py-5 bg-white">
+          <Container className="py-4">
+            <div className="text-center mb-5">
+              <div className="t1-section-chip">Informasi</div>
+              <h2 className="fw-bold" style={{ color: "#1a1a1a" }}>
+                Artikel &amp; Berita
+              </h2>
+            </div>
+            <Row className="g-4">
+              {articles.map((item, i) => {
+                const articleDate = item.date
+                  ? new Date(item.date + "T00:00:00").toLocaleDateString(
+                      "id-ID",
+                      { day: "numeric", month: "long", year: "numeric" },
+                    )
+                  : item.created_at
+                    ? new Date(item.created_at).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "";
+                const summary = item.excerpt || item.summary || "";
+                const typeLabel = item.type === "berita" ? "Berita" : "Artikel";
+                return (
+                  <Col lg={6} key={item.id || i}>
                     <div
-                      className="t1-art-body"
+                      className="t1-art-card"
                       style={{
-                        flex: 1,
+                        height: "100%",
                         display: "flex",
                         flexDirection: "column",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          marginBottom: 8,
-                        }}
-                      >
-                        <span
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          onError={(e) => (e.target.style.display = "none")}
+                        />
+                      ) : (
+                        <div
                           style={{
-                            fontSize: "0.6875rem",
-                            fontWeight: 800,
-                            letterSpacing: "0.6px",
-                            textTransform: "uppercase",
-                            background: "rgba(26,92,69,0.1)",
-                            color: "#1A5C45",
-                            borderRadius: 20,
-                            padding: "2px 8px",
+                            width: "100%",
+                            height: 200,
+                            background:
+                              "linear-gradient(135deg, #F0F7F4, #E8F5E9)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#C9CDD4",
+                            fontSize: "2rem",
                           }}
                         >
-                          {typeLabel}
-                        </span>
-                        {articleDate && (
+                          Copy
+                        </div>
+                      )}
+                      <div
+                        className="t1-art-body"
+                        style={{
+                          flex: 1,
+                          display: "flex",
+                          flexDirection: "column",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            marginBottom: 8,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.6875rem",
+                              fontWeight: 800,
+                              letterSpacing: "0.6px",
+                              textTransform: "uppercase",
+                              background: "rgba(26,92,69,0.1)",
+                              color: "#1A5C45",
+                              borderRadius: 20,
+                              padding: "2px 8px",
+                            }}
+                          >
+                            {typeLabel}
+                          </span>
+                          {articleDate && (
+                            <p
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "#9AA3AF",
+                                fontWeight: 600,
+                                margin: 0,
+                              }}
+                            >
+                              {articleDate}
+                            </p>
+                          )}
+                        </div>
+                        <h5>{item.title}</h5>
+                        {summary && <p style={{ flex: 1 }}>{summary}</p>}
+                        {item.author && (
                           <p
                             style={{
                               fontSize: "0.75rem",
                               color: "#9AA3AF",
-                              fontWeight: 600,
-                              margin: 0,
+                              marginBottom: 8,
                             }}
                           >
-                            {articleDate}
+                            Oleh: {item.author}
                           </p>
                         )}
+                        <a href="#artikel" className="t1-read-more">
+                          Baca Selengkapnya <FaArrowRight size={11} />
+                        </a>
                       </div>
-                      <h5>{item.title}</h5>
-                      {summary && <p style={{ flex: 1 }}>{summary}</p>}
-                      {item.author && (
-                        <p
-                          style={{
-                            fontSize: "0.75rem",
-                            color: "#9AA3AF",
-                            marginBottom: 8,
-                          }}
-                        >
-                          Oleh: {item.author}
-                        </p>
-                      )}
-                      <a href="#artikel" className="t1-read-more">
-                        Baca Selengkapnya <FaArrowRight size={11} />
-                      </a>
                     </div>
-                  </div>
-                </Col>
-              );
-            })}
-          </Row>
+                  </Col>
+                );
+              })}
+            </Row>
 
-          <div className="text-center mt-5">
-            <button className="t1-gold-btn">
-              Lihat Semua Artikel <FaArrowRight size={13} />
-            </button>
-          </div>
-        </Container>
-      </section>
+            <div className="text-center mt-5">
+              <button className="t1-gold-btn">
+                Lihat Semua Artikel <FaArrowRight size={13} />
+              </button>
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* ══════════════════════════════════════════ GALERI ═══ */}
-      {(() => {
-        const galleryItems =
-          data?.gallery?.filter((x) => x.type === "foto") || [];
+      {menuVis.galeri !== false && (() => {
         const photos =
-          galleryItems.length > 0
-            ? galleryItems
+          data?.gallery?.length > 0
+            ? data.gallery.map((url, i) => ({ id: i, url, caption: "Dokumentasi Kegiatan" }))
             : [
                 {
                   id: 1,
@@ -1415,16 +1431,14 @@ const Template1 = ({ data }) => {
                         borderRadius: 14,
                         cursor: "pointer",
                       }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.querySelector(
-                          ".gl-cap-overlay",
-                        ).style.opacity = 1)
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.querySelector(
-                          ".gl-cap-overlay",
-                        ).style.opacity = 0)
-                      }
+                      onMouseEnter={(e) => {
+                        const overlay = e.currentTarget.querySelector(".gl-cap-overlay");
+                        if (overlay) overlay.style.opacity = 1;
+                      }}
+                      onMouseLeave={(e) => {
+                        const overlay = e.currentTarget.querySelector(".gl-cap-overlay");
+                        if (overlay) overlay.style.opacity = 0;
+                      }}
                     >
                       <img
                         src={item.url}

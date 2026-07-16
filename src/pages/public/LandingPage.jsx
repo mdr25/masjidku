@@ -71,6 +71,8 @@ const LandingPage = () => {
   const [scrolled, setScrolled] = useState(false);
   const currentUser = authService.getCurrentUser();
   const isLoggedIn = authService.isAuthenticated() && currentUser;
+  const isSuperAdmin = currentUser?.role === "super_admin";
+  const dashboardUrl = isSuperAdmin ? "/superadmin" : "/app/dashboard";
 
   useEffect(() => {
     document.title = "MasjidKu - Platform Digital Masjid Indonesia";
@@ -99,7 +101,7 @@ const LandingPage = () => {
     {
       icon: <FaNewspaper size={22} />,
       title: "Manajemen Konten",
-      desc: "Kelola artikel, berita, program kajian, dan pengumuman langsung dari panel yang mudah digunakan.",
+      desc: "Kelola berita, program kegiatan, kajian, dan pengumuman langsung dari panel yang mudah digunakan.",
     },
     {
       icon: <FaImages size={22} />,
@@ -109,7 +111,7 @@ const LandingPage = () => {
     {
       icon: <FaMapMarkerAlt size={22} />,
       title: "Profil Masjid Lengkap",
-      desc: "Tampilkan sejarah, visi-misi, struktur kepengurusan, dan informasi kontak masjid Anda.",
+      desc: "Tampilkan sejarah, struktur kepengurusan, dan informasi kontak masjid Anda.",
     },
     {
       icon: <FaShieldAlt size={22} />,
@@ -639,11 +641,11 @@ const LandingPage = () => {
           <div className="lp-nav-actions d-flex align-items-center gap-3">
             {isLoggedIn ? (
               <>
-                <Link to="/app/dashboard" className="lp-user-chip">
+                <Link to={dashboardUrl} className="lp-user-chip">
                   <div className="lp-user-avatar">{userInitial}</div>
                   {userName}
                 </Link>
-                <Link to="/app/dashboard" className="lp-btn-cta">
+                <Link to={dashboardUrl} className="lp-btn-cta">
                   Dashboard <FaArrowRight size={12} />
                 </Link>
               </>
@@ -676,7 +678,7 @@ const LandingPage = () => {
         ))}
         <div className="mt-auto d-flex flex-column gap-3 pt-5">
           {isLoggedIn ? (
-            <Link to="/app/dashboard" className="lp-btn-primary w-100 justify-content-center" onClick={() => setMenuOpen(false)}>
+            <Link to={dashboardUrl} className="lp-btn-primary w-100 justify-content-center" onClick={() => setMenuOpen(false)}>
               Buka Dashboard <FaArrowRight size={14} />
             </Link>
           ) : (
@@ -724,7 +726,7 @@ const LandingPage = () => {
                 </p>
                 <div className="d-flex align-items-center gap-3 flex-wrap">
                   {isLoggedIn ? (
-                    <Link to="/app/dashboard" className="lp-btn-primary" style={{ background: "#C9A84C", color: "#0D3B2E" }}>
+                    <Link to={dashboardUrl} className="lp-btn-primary" style={{ background: "#C9A84C", color: "#0D3B2E" }}>
                       Buka Dashboard <FaArrowRight size={14} />
                     </Link>
                   ) : (
@@ -884,7 +886,7 @@ const LandingPage = () => {
                   {[
                     { icon: <FaUsers size={14} />, label: "Total Jamaah Terdaftar", val: "1.240" },
                     { icon: <FaCalendarAlt size={14} />, label: "Program Bulan Ini", val: "8 Kajian" },
-                    { icon: <FaNewspaper size={14} />, label: "Artikel Terbit", val: "24 Artikel" },
+                    { icon: <FaNewspaper size={14} />, label: "Berita Terbit", val: "24 Berita" },
                     { icon: <FaClock size={14} />, label: "Jadwal Sholat Hari Ini", val: "Sudah Sinkron ✓" },
                   ].map((item, i) => (
                     <div key={i} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 18px", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -955,7 +957,7 @@ const LandingPage = () => {
                   Bergabunglah dengan ratusan masjid yang sudah memanfaatkan MasjidKu untuk mendekatkan diri dengan jamaah.
                 </p>
                 {isLoggedIn ? (
-                  <Link to="/app/dashboard" className="lp-btn-primary" style={{ background: "#C9A84C", color: "#0D3B2E", fontSize: "1rem", padding: "14px 36px" }}>
+                  <Link to={dashboardUrl} className="lp-btn-primary" style={{ background: "#C9A84C", color: "#0D3B2E", fontSize: "1rem", padding: "14px 36px" }}>
                     Buka Dashboard Saya <FaArrowRight size={14} />
                   </Link>
                 ) : (
@@ -999,7 +1001,7 @@ const LandingPage = () => {
               <div className="lp-footer-heading">Akun</div>
               <Link to="/login" className="lp-footer-link">Masuk</Link>
               <Link to="/register" className="lp-footer-link">Daftar Gratis</Link>
-              {isLoggedIn && <Link to="/app/dashboard" className="lp-footer-link">Dashboard</Link>}
+              {isLoggedIn && <Link to={dashboardUrl} className="lp-footer-link">Dashboard</Link>}
             </Col>
             <Col lg={4} md={4}>
               <div className="lp-footer-heading">Kontak</div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container, Row, Col, Modal, Button } from "react-bootstrap";
 import {
   FaFacebook,
   FaInstagram,
@@ -47,7 +47,7 @@ const Template2 = ({ data }) => {
     profil: "Profil",
     program: "Program",
     kajian: "Kajian",
-    artikel: "Artikel & Berita",
+    artikel: "Berita",
     galeri: "Galeri",
     kontak: "Kontak",
   };
@@ -79,6 +79,10 @@ const Template2 = ({ data }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("beranda");
   const [activePrayer, setActivePrayer] = useState(null);
+
+  // ── Donation Modal ──
+  const [showDonationModal, setShowDonationModal] = useState(false);
+  const donationConfig = hdr.donation || null;
 
   useEffect(() => {
     let ticking = false;
@@ -193,31 +197,7 @@ const Template2 = ({ data }) => {
           },
         ];
 
-  const programs =
-    data?.programs?.length > 0
-      ? data.programs
-      : [
-          {
-            id: 1,
-            title: "TPQ Ibnu Sina",
-            image: "https://images.unsplash.com/photo-1712249239167-18cb9e056ee6?q=80&w=2070&auto=format&fit=crop",
-          },
-          {
-            id: 2,
-            title: "Ngaji Ahad Pagi",
-            image: "https://images.unsplash.com/photo-1547119846-7d4039e02077?q=80&w=1170&auto=format&fit=crop",
-          },
-          {
-            id: 3,
-            title: "Wakaf & Infaq",
-            image: "https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&q=80&w=800",
-          },
-          {
-            id: 4,
-            title: "Tahsin Al-Quran",
-            image: "https://images.unsplash.com/photo-1649030839339-3d117544fcb4?q=80&w=1132&auto=format&fit=crop",
-          },
-        ];
+  const programs = data?.programs || [];
 
   const kajian =
     data?.kajian?.length > 0
@@ -245,16 +225,8 @@ const Template2 = ({ data }) => {
     data?.gallery?.length > 0
       ? data.gallery
       : [
-          {
-            id: 1,
-            caption: "Kajian Akbar",
-            url: "https://images.unsplash.com/photo-1577985051167-0d49eec21977?q=80&w=1170&auto=format&fit=crop",
-          },
-          {
-            id: 2,
-            caption: "Idul Fitri",
-            url: "https://images.unsplash.com/photo-1564769662533-4f00a87b4056?q=80&w=1170&auto=format&fit=crop",
-          },
+          "https://images.unsplash.com/photo-1577985051167-0d49eec21977?q=80&w=1170&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1564769662533-4f00a87b4056?q=80&w=1170&auto=format&fit=crop",
         ];
 
   const prayerLabels = {
@@ -540,11 +512,24 @@ const Template2 = ({ data }) => {
                   {label}
                 </a>
               ))}
-              {ctaButtons.filter((b) => b.show !== false).map((btn, i) => (
-                <a key={i} href={`#${i === 0 ? ctaPrimaryDest : ctaSecondaryDest}`} className="t2-btn-cta">
-                  {btn.label}
-                </a>
-              ))}
+              {ctaButtons.filter((b) => b.show !== false).map((btn, i) => {
+                const isDonasi = btn.label.toLowerCase().includes("donasi");
+                return (
+                  <a 
+                    key={i} 
+                    href={`#${i === 0 ? ctaPrimaryDest : ctaSecondaryDest}`} 
+                    className="t2-btn-cta"
+                    onClick={(e) => {
+                      if (isDonasi) {
+                        e.preventDefault();
+                        setShowDonationModal(true);
+                      }
+                    }}
+                  >
+                    {btn.label}
+                  </a>
+                );
+              })}
             </div>
 
             {/* Mobile Toggle */}
@@ -653,14 +638,6 @@ const Template2 = ({ data }) => {
                   {profile.description ||
                     `${profile.name} adalah pusat kegiatan ibadah dan sosial kemasyarakatan. Kami berkomitmen untuk membangun generasi umat yang tangguh, berakhlak mulia, dan berwawasan luas.`}
                 </p>
-                {profile.visiMisi && (
-                  <div style={{ background: "#F8FAFC", padding: 24, borderRadius: 16, borderLeft: "4px solid #2563EB" }}>
-                    <div style={{ fontWeight: 700, color: "#1E293B", marginBottom: 8 }}>Visi & Misi</div>
-                    <p style={{ margin: 0, color: "#64748B", whiteSpace: "pre-line", fontSize: "0.9375rem" }}>
-                      {profile.visiMisi}
-                    </p>
-                  </div>
-                )}
                 
                 <div className="d-flex flex-column gap-3 mt-4">
                   <div className="d-flex align-items-center gap-3">
@@ -695,16 +672,35 @@ const Template2 = ({ data }) => {
               <h2 className="t2-section-title">Layanan & Fasilitas</h2>
             </div>
             <Row className="g-4">
-              {programs.map((p) => (
-                <Col md={6} lg={3} key={p.id}>
-                  <div className="t2-card">
-                    <img src={p.image} alt={p.title} className="t2-card-img" style={{ height: 180 }} />
-                    <div style={{ padding: 20 }}>
-                      <h4 style={{ fontSize: "1.125rem", fontWeight: 700, margin: 0, color: "#0F172A" }}>{p.title}</h4>
-                    </div>
+              {programs.length > 0 ? (
+                programs.map((p) => (
+                  <Col md={6} lg={3} key={p.id}>
+                    {p.link ? (
+                      <a href={p.link} target="_blank" rel="noreferrer" className="t2-card text-decoration-none d-block">
+                        <img src={p.image || "https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&q=80&w=800"} alt={p.title} className="t2-card-img" style={{ height: 180 }} />
+                        <div style={{ padding: 20 }}>
+                          <h4 style={{ fontSize: "1.125rem", fontWeight: 700, margin: 0, color: "#0F172A" }}>{p.title}</h4>
+                        </div>
+                      </a>
+                    ) : (
+                      <div className="t2-card">
+                        <img src={p.image || "https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&q=80&w=800"} alt={p.title} className="t2-card-img" style={{ height: 180 }} />
+                        <div style={{ padding: 20 }}>
+                          <h4 style={{ fontSize: "1.125rem", fontWeight: 700, margin: 0, color: "#0F172A" }}>{p.title}</h4>
+                        </div>
+                      </div>
+                    )}
+                  </Col>
+                ))
+              ) : (
+                <Col md={12}>
+                  <div style={{ padding: "60px 20px", textAlign: "center", background: "#fff", borderRadius: 24, border: "1px solid #E2E8F0" }}>
+                    <FaMosque size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
+                    <h5 style={{ color: "#1E293B", fontWeight: 700 }}>Belum Ada Program</h5>
+                    <p style={{ color: "#64748B", fontSize: "0.9375rem" }}>Nantikan berbagai program dan kegiatan menarik dari masjid kami.</p>
                   </div>
                 </Col>
-              ))}
+              )}
             </Row>
           </Container>
         </section>
@@ -728,7 +724,7 @@ const Template2 = ({ data }) => {
               <Col lg={8}>
                 <div className="d-flex flex-column gap-3">
                   {kajian.map((k) => {
-                    const d = new Date(k.date);
+                    const d = new Date(k.date ? k.date + "T00:00:00" : null);
                     return (
                       <div key={k.id} className="t2-kajian-card">
                         <div className="t2-kajian-date">
@@ -763,7 +759,7 @@ const Template2 = ({ data }) => {
           <Container>
             <div className="d-flex align-items-end justify-content-between mb-5 flex-wrap gap-3">
               <div>
-                <div className="t2-section-badge">Artikel & Berita</div>
+                <div className="t2-section-badge">Berita</div>
                 <h2 className="t2-section-title mb-0">Informasi Terbaru</h2>
               </div>
               <a href="#" className="t2-btn-outline">Semua Berita</a>
@@ -800,18 +796,10 @@ const Template2 = ({ data }) => {
               <h2 className="t2-section-title">Dokumentasi Kegiatan</h2>
             </div>
             <Row className="g-3">
-              {gallery.map((g) => (
-                <Col md={6} lg={4} key={g.id}>
+              {gallery.map((g, idx) => (
+                <Col md={6} lg={4} key={idx}>
                   <div style={{ borderRadius: 16, overflow: "hidden", position: "relative", group: true, aspectRatio: "4/3" }}>
-                    <img src={g.type === "video" ? getYTThumb(g.url) : g.url} alt={g.caption} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }} className="t2-gallery-img" />
-                    {g.type === "video" && (
-                      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 48, height: 48, borderRadius: "50%", background: "rgba(37,99,235,0.9)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
-                        <FaPlay style={{ marginLeft: 4 }} />
-                      </div>
-                    )}
-                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(15,23,42,0.8), transparent)", padding: "40px 20px 20px" }}>
-                      <h5 style={{ color: "#fff", margin: 0, fontWeight: 600, fontSize: "1.125rem" }}>{g.caption}</h5>
-                    </div>
+                    <img src={g} alt="Galeri" style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }} className="t2-gallery-img" />
                   </div>
                 </Col>
               ))}
@@ -888,7 +876,13 @@ const Template2 = ({ data }) => {
             <Col lg={3} md={4}>
               <h5 className="t2-footer-title">Dukungan</h5>
               <p style={{ color: "#94A3B8", marginBottom: 16 }}>Dukung operasional masjid dan program dakwah kami.</p>
-              <a href="#" className="t2-btn-cta" style={{ display: "inline-block" }}>Donasi Sekarang</a>
+              <button 
+                className="t2-btn-cta border-0" 
+                style={{ display: "inline-block" }}
+                onClick={(e) => { e.preventDefault(); setShowDonationModal(true); }}
+              >
+                Donasi Sekarang
+              </button>
             </Col>
           </Row>
 
@@ -897,6 +891,52 @@ const Template2 = ({ data }) => {
           </div>
         </Container>
       </footer>
+
+      {/* ── Donation Modal ── */}
+      <Modal show={showDonationModal} onHide={() => setShowDonationModal(false)} centered size="md">
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold" style={{ color: "#0F172A" }}>
+            Donasi & Infaq
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center px-4 pb-4">
+          <p className="text-muted mb-4">
+            {donationConfig?.description || "Mari salurkan infaq dan sedekah terbaik Anda untuk kemakmuran masjid."}
+          </p>
+          
+          <div className="bg-light p-3 rounded-4 mb-4" style={{ border: "2px dashed #3B82F6" }}>
+            <h6 className="fw-bold text-dark mb-3">Scan QRIS</h6>
+            <img 
+              src={donationConfig?.qrisUrl || "https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg"} 
+              alt="QRIS Donasi" 
+              style={{ maxWidth: "100%", height: "auto", maxHeight: "250px", borderRadius: "12px" }} 
+            />
+          </div>
+
+          <h6 className="fw-bold text-dark mb-3">Atau Transfer Melalui Bank</h6>
+          <div className="text-start bg-light p-3 rounded-4">
+            <div className="mb-2">
+              <small className="text-muted d-block">Bank</small>
+              <strong style={{ fontSize: "1.1rem" }}>{donationConfig?.bankName || "BSI (Bank Syariah Indonesia)"}</strong>
+            </div>
+            <div className="mb-2">
+              <small className="text-muted d-block">Nomor Rekening</small>
+              <strong style={{ fontSize: "1.2rem", letterSpacing: "1px", color: "#3B82F6" }}>
+                {donationConfig?.accountNumber || "7123456789"}
+              </strong>
+            </div>
+            <div>
+              <small className="text-muted d-block">Atas Nama</small>
+              <strong>{donationConfig?.accountName || "DKM MasjidKu"}</strong>
+            </div>
+          </div>
+          
+          <Button variant="primary" className="w-100 mt-4 fw-semibold py-2" onClick={() => setShowDonationModal(false)} style={{ backgroundColor: "#2563EB", border: "none" }}>
+            Tutup
+          </Button>
+        </Modal.Body>
+      </Modal>
+
     </div>
   );
 };

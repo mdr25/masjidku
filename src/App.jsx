@@ -14,14 +14,13 @@ import DashboardHome from "./pages/dashboard/DashboardHome";
 import MosqueProfile from "./pages/dashboard/MosqueProfile";
 import LandingPage from "./pages/public/LandingPage";
 import TvDisplay from "./pages/public/TvDisplay";
-import PreviewPage from "./pages/dashboard/PreviewPage";
+import MosqueWebsitePage from "./pages/dashboard/MosqueWebsitePage";
 import PrayerSchedule from "./pages/dashboard/activities/PrayerSchedule";
 import KajianList from "./pages/dashboard/activities/KajianList";
 import DKMList from "./pages/dashboard/admin/DKMList";
 import JamaahList from "./pages/dashboard/admin/JamaahList";
 import ProgramList from "./pages/dashboard/activities/ProgramList";
 
-import FinanceDashboard from "./pages/dashboard/finance/FinanceDashboard";
 import ArticleList from "./pages/dashboard/info/ArticleList";
 import GalleryList from "./pages/dashboard/info/GalleryList";
 import HomeEditor from "./pages/dashboard/editor/HomeEditor";
@@ -31,12 +30,35 @@ import FooterEditor from "./pages/dashboard/editor/FooterEditor";
 import ContentManager from "./pages/dashboard/ContentManager";
 import ThemePage from "./pages/dashboard/ThemePage";
 
+// Super Admin
+import AdminDashboard from "./pages/superadmin/AdminDashboard";
+import AdminVerificationDetail from "./pages/superadmin/AdminVerificationDetail";
+import { authService } from "./services/apiClient";
+
+// Guard: hanya user dengan role super_admin yang bisa akses
+const SuperAdminRoute = () => {
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  const user = authService.getCurrentUser();
+  if (user?.role !== "super_admin") {
+    return <Navigate to="/app/dashboard" replace />;
+  }
+  return (
+    <Routes>
+      <Route path="/" element={<AdminDashboard />} />
+      <Route path="/verifications/:mosqueId" element={<AdminVerificationDetail />} />
+    </Routes>
+  );
+};
+
 function App() {
   return (
     <Router>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/masjid/:slug" element={<MosqueWebsitePage />} />
 
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -65,8 +87,6 @@ function App() {
             <Route path="activities/program" element={<ProgramList />} />
 
 
-            {/* Finance Modules */}
-            <Route path="finance" element={<FinanceDashboard />} />
 
             {/* Info Modules */}
             <Route path="info/articles" element={<ArticleList />} />
@@ -78,15 +98,18 @@ function App() {
             <Route path="editor/home/slider" element={<HeroEditor />} />
             <Route path="editor/home/footer" element={<FooterEditor />} />
 
-            <Route path="preview" element={<PreviewPage />} />
+            <Route path="preview" element={<MosqueWebsitePage />} />
 
             {/* Wildcard for app */}
             <Route path="*" element={<Navigate to="/app/dashboard" />} />
           </Route>
         </Route>
 
+        {/* Super Admin Routes */}
+        <Route path="/superadmin/*" element={<SuperAdminRoute />} />
+
         {/* Standalone Website Route */}
-        <Route path="/website" element={<PreviewPage />} />
+        <Route path="/website" element={<MosqueWebsitePage />} />
         <Route path="/tv" element={<TvDisplay />} />
 
         {/* Catch all */}

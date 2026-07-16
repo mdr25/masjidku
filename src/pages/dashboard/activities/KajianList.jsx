@@ -8,6 +8,36 @@ import {
 import { postService } from "../../../services/apiClient";
 
 /* ── Helpers ── */
+const getJakartaNow = () => {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false
+  });
+  const parts = formatter.formatToParts(now);
+  const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+  return new Date(`${map.year}-${map.month.padStart(2, '0')}-${map.day.padStart(2, '0')}T${map.hour.padStart(2, '0')}:${map.minute.padStart(2, '0')}:${map.second.padStart(2, '0')}`);
+};
+
+const getKajianDate = (dateStr, timeStr) => {
+  if (!dateStr) return null;
+  const time = timeStr ? timeStr : "23:59:59";
+  return new Date(`${dateStr}T${time}`);
+};
+
+const isPast = (dateStr, timeStr) => {
+  const eventDate = getKajianDate(dateStr, timeStr);
+  if (!eventDate) return false;
+  const nowJakarta = getJakartaNow();
+  return eventDate < nowJakarta;
+};
+
 const fmtDate = (d) => {
   if (!d) return "-";
   return new Date(d + "T00:00:00").toLocaleDateString("id-ID", {
@@ -16,9 +46,6 @@ const fmtDate = (d) => {
 };
 const fmtTime = (t) => {
   if (!t) return "-";
-  const [h, m] = t.split(":");
-  const hour = parseInt(h, 10);
-  const suffix = hour < 12 ? "Subuh" : hour < 15 ? "Dhuhur" : hour < 18 ? "Ashar" : hour < 19 ? "Maghrib" : "Isya";
   return `${t} WIB`;
 };
 
@@ -37,11 +64,21 @@ const KajianList = () => {
   const [editId, setEditId]     = useState(null);
   const [saving, setSaving]     = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [toast, setToast]       = useState(null);
   const [imgPreview, setImgPreview] = useState("");
   const [imgDragging, setImgDragging] = useState(false);
+  const [tick, setTick]         = useState(0);
   const titleRef = useRef(null);
   const fileRef  = useRef(null);
+
+  // Interval to refresh lifecycle status every 1 minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
 
   /* ── Load ── */
@@ -50,7 +87,7 @@ const KajianList = () => {
     try {
       const res = await postService.getPosts();
       const all = res.data?.data || [];
-      setList(all.filter((p) => p.type === "kajian").sort((a, b) => {
+      setList(all.filter((p) => p.type === "pengumuman").sort((a, b) => {
         // Sort by date desc
         if (!a.date && !b.date) return 0;
         if (!a.date) return 1;
@@ -77,7 +114,7 @@ const KajianList = () => {
     reader.onload = (e) => {
       const b64 = e.target.result;
       setImgPreview(b64);
-      setForm((p) => ({ ...p, image: b64 }));
+      setForm((p) => ({ ...p, image: b64, imageFile: file }));
     };
     reader.readAsDataURL(file);
   };
@@ -103,12 +140,12 @@ const KajianList = () => {
     setForm({
       title: item.title || "",
       speaker: item.speaker || "",
-      date: item.date || "",
-      time: item.time || "",
+      date: item.event_date || item.date || "",
+      time: item.event_time || item.time || "",
       location: item.location || "",
       image: item.image || "",
       imageFile: null,
-      is_published: !!item.is_published,
+      is_published: item.status ? item.status === "published" : (item.is_published !== false),
     });
     setImgPreview(item.image || "");
     setEditId(item.id);
@@ -130,15 +167,25 @@ const KajianList = () => {
     if (!form.title.trim() || !form.date || !form.time) return;
     setSaving(true);
     try {
-      const { imageFile, ...saveData } = form;
+      const { imageFile, date, time, speaker, location, ...saveData } = form;
+      if (imageFile) saveData.cover_image = imageFile;
+      
+      const payload = {
+        ...saveData,
+        type: "pengumuman",
+        event_date: date,
+        event_time: time,
+        speaker: speaker,
+        location: location
+      };
+
       if (editId) {
-        await postService.updatePost(editId, { ...saveData, type: "kajian" });
-        setList((prev) => prev.map((p) => p.id === editId ? { ...p, ...saveData } : p));
+        await postService.updatePost(editId, payload);
       } else {
-        const res = await postService.createPost({ ...saveData, type: "kajian" });
-        const created = res.data?.data || { ...saveData, id: Date.now(), type: "kajian" };
-        setList((prev) => [created, ...prev]);
+        await postService.createPost(payload);
       }
+      
+      await load();
       showToast("success", editId ? "Kajian berhasil diperbarui!" : "Kajian berhasil ditambahkan!");
       closePanel();
     } catch {
@@ -150,15 +197,22 @@ const KajianList = () => {
 
 
   /* ── Delete ── */
-  const handleDelete = async (id) => {
-    if (!window.confirm("Hapus jadwal kajian ini?")) return;
+  const handleDelete = (id) => {
+    setConfirmDelete(id);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDelete) return;
+    const id = confirmDelete;
     setDeleting(id);
+    setConfirmDelete(null);
     try {
       await postService.deletePost(id);
-      setList((prev) => prev.filter((p) => p.id !== id));
-      showToast("success", "Kajian dihapus.");
-    } catch {
-      showToast("error", "Gagal menghapus.");
+      await load();
+      showToast("success", "Kajian berhasil dihapus.");
+    } catch (e) {
+      const msg = e.response?.data?.message || "Gagal menghapus kajian.";
+      showToast("error", msg);
     } finally {
       setDeleting(null);
     }
@@ -169,8 +223,11 @@ const KajianList = () => {
     try {
       if (item.is_published) await postService.unpublishPost(item.id);
       else await postService.publishPost(item.id);
-      setList((prev) => prev.map((p) => p.id === item.id ? { ...p, is_published: !p.is_published } : p));
-    } catch { /* abaikan */ }
+      await load();
+      showToast("success", item.is_published ? "Kajian dijadikan draft." : "Kajian berhasil ditayangkan!");
+    } catch {
+      showToast("error", "Gagal mengubah status publikasi.");
+    }
   };
 
   /* ── Filter ── */
@@ -182,7 +239,7 @@ const KajianList = () => {
   const published = list.filter((k) => k.is_published).length;
 
   /* ── Apakah tanggal sudah lewat? ── */
-  const isPast = (date) => date && new Date(date) < new Date(new Date().toDateString());
+  // Diserahkan sepenuhnya ke modul helper isPast(date, time)
 
   /* ── CSS ── */
   const css = `
@@ -246,6 +303,18 @@ const KajianList = () => {
     /* Empty */
     .kj-empty { text-align: center; padding: 52px 24px; }
     .kj-empty-icon { width: 60px; height: 60px; border-radius: 16px; background: #F5F6F8; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+
+    /* Modal */
+    .kj-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; width: 400px; max-width: 90vw; z-index: 1050; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); padding: 24px; animation: kjZoomIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; }
+    @keyframes kjZoomIn { from{opacity:0;transform:translate(-50%, -45%) scale(0.95)} to{opacity:1;transform:translate(-50%, -50%) scale(1)} }
+    .kj-modal-icon { width: 56px; height: 56px; border-radius: 50%; background: #FEE2E2; display: flex; align-items: center; justify-content: center; color: #EF4444; margin: 0 auto 16px; }
+    .kj-modal-title { font-size: 1.125rem; font-weight: 800; color: #1a1a1a; margin-bottom: 8px; }
+    .kj-modal-desc { font-size: 0.9375rem; color: #6B7280; margin-bottom: 24px; line-height: 1.5; }
+    .kj-modal-actions { display: flex; gap: 12px; }
+    .kj-btn-cancel { flex: 1; padding: 10px 0; border-radius: 10px; background: #fff; border: 1.5px solid #EAECF0; color: #344054; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .kj-btn-cancel:hover { background: #F9FAFB; border-color: #D0D5DD; }
+    .kj-btn-confirm { flex: 1; padding: 10px 0; border-radius: 10px; background: #EF4444; border: none; color: #fff; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .kj-btn-confirm:hover { background: #DC2626; box-shadow: 0 4px 12px rgba(239,68,68,0.2); }
 
     /* ── Slide-in Drawer ── */
     .kj-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1040; backdrop-filter: blur(2px); animation: kjFadeIn 0.2s ease; }
@@ -412,7 +481,7 @@ const KajianList = () => {
               </tr>
             ) : (
               filtered.map((item) => {
-                const past = isPast(item.date);
+                const past = isPast(item.date, item.time);
                 return (
                   <tr key={item.id} className={past ? "kj-past" : ""}>
                     <td>
@@ -572,6 +641,30 @@ const KajianList = () => {
               <button className="kj-btn-save" type="submit" form="kajian-form" disabled={saving || !form.title.trim() || !form.date || !form.time}>
                 <FaSave size={13} />
                 {saving ? "Menyimpan…" : editId ? "Simpan Perubahan" : "Tambahkan Kajian"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Modal Konfirmasi Hapus ── */}
+      {confirmDelete && (
+        <>
+          <div className="kj-overlay" onClick={() => setConfirmDelete(null)} />
+          <div className="kj-modal">
+            <div className="kj-modal-icon">
+              <FaTrash size={24} />
+            </div>
+            <div className="kj-modal-title">Hapus Kajian</div>
+            <div className="kj-modal-desc">
+              Apakah Anda yakin ingin menghapus jadwal kajian ini? Tindakan ini tidak dapat dibatalkan.
+            </div>
+            <div className="kj-modal-actions">
+              <button className="kj-btn-cancel" onClick={() => setConfirmDelete(null)}>
+                Batal
+              </button>
+              <button className="kj-btn-confirm" onClick={confirmDeleteAction}>
+                Ya, Hapus
               </button>
             </div>
           </div>

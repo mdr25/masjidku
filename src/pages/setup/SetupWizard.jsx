@@ -27,7 +27,7 @@ const SetupWizard = () => {
   const currentUser = authService.getCurrentUser() || {};
 
   const [wizardData, setWizardData] = useState({
-    domain: currentUser.slug || "",
+    domain: (currentUser.slug && /^masjid-\d+$/.test(currentUser.slug)) ? "" : (currentUser.slug || ""),
     templateId: "",
     info: {
       name: currentUser.name || "", address: "", description: "",

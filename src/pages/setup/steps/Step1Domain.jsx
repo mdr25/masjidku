@@ -16,8 +16,10 @@ const Step1Domain = ({ data, updateData, onNext }) => {
       const payload = response.data?.data || response.data;
       const isAvailable = payload.available !== undefined ? payload.available : true;
       setCheckResult({ available: isAvailable });
-    } catch {
-      setCheckResult({ available: false, error: true });
+    } catch (err) {
+      console.error("Domain Check Error:", err);
+      const errorMsg = err.response?.data?.message || err.message;
+      setCheckResult({ available: false, error: true, msg: errorMsg });
     } finally {
       setIsChecking(false);
     }
@@ -47,7 +49,7 @@ const Step1Domain = ({ data, updateData, onNext }) => {
               placeholder="nama-masjid-anda"
               value={data.domain}
               onChange={(e) => {
-                updateData("domain", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+                updateData("domain", e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""));
                 setCheckResult(null);
               }}
               required
@@ -86,15 +88,15 @@ const Step1Domain = ({ data, updateData, onNext }) => {
         {checkResult && (
           <div className="d-flex align-items-center gap-2 mb-4 p-3 rounded-3"
             style={{
-              background: checkResult.available ? "#F0FDF4" : "#FFF0F0",
-              border: `1px solid ${checkResult.available ? "#BBF7D0" : "#FCA5A5"}`,
+              background: checkResult.available && !checkResult.error ? "#F0FDF4" : "#FFF0F0",
+              border: `1px solid ${checkResult.available && !checkResult.error ? "#BBF7D0" : "#FCA5A5"}`,
               fontSize: "0.85rem",
               fontWeight: 600,
-              color: checkResult.available ? "#166534" : "#991B1B",
+              color: checkResult.available && !checkResult.error ? "#166534" : "#991B1B",
             }}>
-            {checkResult.available
+            {checkResult.available && !checkResult.error
               ? <><FaCheckCircle /> Domain tersedia dan siap digunakan!</>
-              : <><FaTimesCircle /> Domain ini sudah digunakan masjid lain.</>}
+              : <><FaTimesCircle /> {checkResult.msg || "Domain ini sudah digunakan masjid lain."}</>}
           </div>
         )}
 

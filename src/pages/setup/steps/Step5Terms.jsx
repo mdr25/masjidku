@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Form, Spinner } from "react-bootstrap";
 import { FaArrowRight, FaCheckCircle } from "react-icons/fa";
-import { onboardingService, dashboardService } from "../../../services/apiClient";
+import { onboardingService } from "../../../services/apiClient";
 
 const Step5Terms = ({ data, updateData, onNext }) => {
   const [submitting, setSubmitting] = useState(false);
@@ -11,7 +11,7 @@ const Step5Terms = ({ data, updateData, onNext }) => {
     if (!data.domain || !data.templateId) return false;
     const i = data.info;
     if (!i.name || !i.address || !i.email || !i.province || !i.city || !i.district || !i.contact) return false;
-    // Step 4 Verification dipotong (tidak wajib diisi untuk aktivasi awal)
+    if (!data.files || !data.files.wakaf || !data.files.sk) return false;
     return true;
   };
 
@@ -25,12 +25,22 @@ const Step5Terms = ({ data, updateData, onNext }) => {
       // 1. Set domain/slug
       await onboardingService.setDomain(data.domain);
 
-      // 2. Simpan semua data sekaligus: info masjid + template_code dalam satu operasi
-      //    agar tidak ada risiko urutan/timing antar panggilan
-      await onboardingService.updateProfile(data.domain, {
-        ...data.info,
-        template_code: data.templateId,   // ← sertakan template dalam satu write
-      });
+      // 2. Set template
+      await onboardingService.selectTemplate(data.templateId);
+
+      // 3. Simpan semua data info masjid
+      await onboardingService.updateProfile(data.domain, data.info);
+
+      // 4. Submit Verification (jika ada file yang diunggah)
+      if (data.files && data.files.wakaf && data.files.sk) {
+        const fd = new FormData();
+        fd.append("waqf_imb_document", data.files.wakaf);
+        fd.append("management_decree_document", data.files.sk);
+        await onboardingService.submitVerification(fd);
+      }
+
+      // 5. Accept Terms
+      await onboardingService.acceptTerms();
 
       // 3. Tandai setup selesai di current user
       const user = JSON.parse(localStorage.getItem("mid_current_user"));

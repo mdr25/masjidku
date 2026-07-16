@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Form, Row, Col, Button, Spinner } from "react-bootstrap";
-import { authService } from "../../../services/apiClient";
+import { authService, dashboardService } from "../../../services/apiClient";
 import {
   FaArrowLeft, FaSave, FaEye, FaMosque, FaHeart, FaBars,
-  FaToggleOn, FaToggleOff, FaCheck, FaUpload, FaTimes, FaCheckCircle
+  FaToggleOn, FaToggleOff, FaCheck, FaUpload, FaTimes, FaCheckCircle, FaImage
 } from "react-icons/fa";
 
 // ─── HeaderEditor — Kelola Header & Navigasi Template ──────────────────────
 const HeaderEditor = () => {
   const user = authService.getCurrentUser();
-  const userSlug = user?.slug || user?.mosque_slug || "demo";
-  const STORAGE_KEY = `mid_site_config_${userSlug}`;
+  const defaultName = user?.name || "Nama Masjid";
+  const [allSettings, setAllSettings] = useState({});
 
   const defaultConfig = {
     logoText: "",
@@ -23,7 +23,7 @@ const HeaderEditor = () => {
       profil: "Profil",
       program: "Program",
       kajian: "Kajian",
-      artikel: "Artikel & Berita",
+      artikel: "Berita",
       galeri: "Galeri",
       kontak: "Kontak",
     },
@@ -32,40 +32,48 @@ const HeaderEditor = () => {
       kajian: true, artikel: true, galeri: true, kontak: true,
     },
     ctaButtons: [{ label: "Donasi", show: true }],
+    donation: {
+      description: "Mari salurkan infaq dan sedekah terbaik Anda untuk kemakmuran masjid.",
+      bankName: "BSI (Bank Syariah Indonesia)",
+      accountNumber: "",
+      accountName: "DKM Masjid",
+      qrisUrl: ""
+    }
   };
 
   const [cfg, setCfg]       = useState(defaultConfig);
   const [saved, setSaved]   = useState(false);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
 
-  // Load from localStorage
+  // Load from Backend API
   useEffect(() => {
-    try {
-      const user = authService.getCurrentUser();
-      const defaultName = user?.name || "Nama Masjid";
+    const load = async () => {
+      try {
+        const settings = await dashboardService.getSiteSettings();
+        setAllSettings(settings);
 
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.header) {
-          // Get mosque name from profile as fallback
-          const profileName = parsed.profile?.name || defaultName;
-          setCfg(prev => ({
+        if (settings.header) {
+          setCfg({
             ...defaultConfig,
-            ...parsed.header,
-            logoText: parsed.header.logoText || profileName,
-            menu:        { ...defaultConfig.menu, ...parsed.header.menu },
-            menuVisible: { ...defaultConfig.menuVisible, ...parsed.header.menuVisible },
-            ctaButtons:  parsed.header.ctaButtons || defaultConfig.ctaButtons,
-          }));
+            ...settings.header,
+            logoText: settings.header.logoText ?? "",
+            menu:        { ...defaultConfig.menu, ...(settings.header.menu || {}) },
+            menuVisible: { ...defaultConfig.menuVisible, ...(settings.header.menuVisible || {}) },
+            ctaButtons:  settings.header.ctaButtons || defaultConfig.ctaButtons,
+            donation:    { ...defaultConfig.donation, ...(settings.header.donation || {}) }
+          });
         } else {
-          setCfg(prev => ({ ...prev, logoText: parsed.profile?.name || defaultName }));
+          setCfg(prev => ({ ...prev, logoText: "" }));
         }
-      } else {
-        setCfg(prev => ({ ...prev, logoText: defaultName }));
+      } catch (e) {
+        console.warn("Failed to load header config", e);
+      } finally {
+        setLoadingData(false);
       }
-    } catch (e) { console.warn("Failed to load header config", e); }
+    };
+    load();
   }, []);
 
   const update = useCallback((path, value) => {
@@ -83,35 +91,106 @@ const HeaderEditor = () => {
     });
   }, []);
 
-  // ── Image upload via FileReader ──
+  // ── Helper to format image URL ──
+  const getFullUrl = (path) => {
+    if (!path) return "";
+    if (path.startsWith("http") || path.startsWith("blob:") || path.startsWith("data:")) return path;
+    const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+    const baseUrl = apiUrl.replace(/\/api$/, "");
+    return `${baseUrl}/storage/${path}`;
+  };
+
+  // ── Image upload via ObjectURL ──
   const fileRef = useRef(null);
+  const [logoImageFile, setLogoImageFile] = useState(null);
+
+  // Revoke object URL on unmount or file change
+  useEffect(() => {
+    return () => {
+      if (logoImageFile && cfg.logoImage && cfg.logoImage.startsWith("blob:")) {
+        URL.revokeObjectURL(cfg.logoImage);
+      }
+    };
+  }, [logoImageFile, cfg.logoImage]);
+
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Ukuran gambar maksimal 5 MB.");
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ukuran gambar maksimal 2 MB.");
+      return;
+    }
+    
+    // Revoke previous blob URL if exists
+    if (cfg.logoImage && cfg.logoImage.startsWith("blob:")) {
+      URL.revokeObjectURL(cfg.logoImage);
+    }
+
+    setLogoImageFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    update("logoImage", objectUrl);
+    e.target.value = "";
+  };
+
+  const removeImage = () => {
+    if (cfg.logoImage && cfg.logoImage.startsWith("blob:")) {
+      URL.revokeObjectURL(cfg.logoImage);
+    }
+    setLogoImageFile(null);
+    update("logoImage", "");
+  };
+
+  const handleQrisUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ukuran QRIS maksimal 2 MB.");
       return;
     }
     const reader = new FileReader();
     reader.onload = (ev) => {
-      update("logoImage", ev.target.result);
+      const next = { ...(cfg.donation || defaultConfig.donation), qrisUrl: ev.target.result };
+      update("donation", next);
     };
     reader.readAsDataURL(file);
     e.target.value = "";
   };
-  const removeImage = () => update("logoImage", "");
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
-      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, header: cfg }));
-      setSaving(false);
+    try {
+      let finalLogoUrl = cfg.logoImage;
+      
+      // 1. Upload logo if there is a new file
+      if (logoImageFile) {
+        const uploadRes = await dashboardService.uploadLogo(logoImageFile);
+        // Extract URL or relative path from response
+        const serverPath = uploadRes.data?.data?.logo_path || uploadRes.data?.data?.logo_url;
+        if (serverPath) {
+          finalLogoUrl = serverPath;
+        }
+      }
+
+      const cfgToSave = { ...cfg, logoImage: finalLogoUrl };
+      const updated = { ...allSettings, header: cfgToSave };
+      
+      await dashboardService.updateSiteSettings(updated);
+      
+      setAllSettings(updated);
+      setCfg(cfgToSave);
+      setLogoImageFile(null); // Clear staging file
+      
       setSaved(true);
       setIsDirty(false);
       setTimeout(() => setSaved(false), 2500);
-    }, 600); // Simulated delay for better UX
+    } catch (e) {
+      console.error("Failed to save header config", e);
+      alert("Gagal menyimpan. Silakan coba lagi.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ── Navbar theme colors for preview ──
@@ -123,6 +202,7 @@ const HeaderEditor = () => {
   const th = themes[cfg.navbarStyle] || themes.dark;
 
   const visMenu = Object.entries(cfg.menu).filter(([k]) => cfg.menuVisible[k] !== false);
+  const displayLogoText = cfg.logoText || defaultName;
 
   /* ─────────────────────────────────────────── STYLE ── */
   const css = `
@@ -301,7 +381,7 @@ const HeaderEditor = () => {
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   {cfg.logoImage ? (
                     <>
-                      <img src={cfg.logoImage} alt="Logo" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 12, border: "1.5px solid #EAECF0", display: "block" }} />
+                      <img src={getFullUrl(cfg.logoImage)} alt="Logo" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 12, border: "1.5px solid #EAECF0", display: "block" }} />
                       <button type="button" onClick={removeImage} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "rgba(239,68,68,0.9)", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem" }}>
                         <FaTimes size={8} />
                       </button>
@@ -317,7 +397,7 @@ const HeaderEditor = () => {
                   <button type="button" onClick={() => fileRef.current?.click()} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#F0F7F4", color: "#1A5C45", border: "1px solid #C8E6D9", borderRadius: 8, padding: "6px 12px", fontSize: "0.8125rem", fontWeight: 700, cursor: "pointer", marginBottom: 6 }}>
                     <FaUpload size={10} /> Upload Logo
                   </button>
-                  <div style={{ fontSize: "0.75rem", color: "#9AA3AF", lineHeight: 1.4 }}>Format JPG/PNG/WEBP, max 5MB.<br/>Akan tampil di navbar jika diisi.</div>
+                  <div style={{ fontSize: "0.75rem", color: "#9AA3AF", lineHeight: 1.4 }}>Format JPG/PNG/WEBP, max 2MB.<br/>Akan tampil di navbar jika diisi.</div>
                 </div>
               </div>
             </div>
@@ -328,7 +408,7 @@ const HeaderEditor = () => {
                 className="form-control he-input"
                 value={cfg.logoText}
                 onChange={e => update("logoText", e.target.value)}
-                placeholder="Nama masjid Anda..."
+                placeholder={`Otomatis: ${defaultName}`}
               />
               <div style={{ fontSize: "0.75rem", color: "#9AA3AF", marginTop: 4 }}>
                 Kosongkan untuk otomatis pakai nama dari Profil Masjid
@@ -393,6 +473,83 @@ const HeaderEditor = () => {
             ))}
           </div>
 
+          {/* Pengaturan Donasi */}
+          <div className="he-section" style={{ backgroundColor: "#F9FAFB" }}>
+            <div className="he-section-title d-flex justify-content-between align-items-center">
+              <span>Pengaturan Donasi</span>
+              <span className="badge bg-success" style={{ fontSize: "0.65rem" }}>Tampil di CTA Modal</span>
+            </div>
+            
+            <div className="mb-3">
+              <label className="he-label">Pesan / Deskripsi Donasi</label>
+              <textarea
+                className="form-control he-input"
+                rows="2"
+                value={cfg.donation?.description || ""}
+                onChange={e => update("donation", { ...cfg.donation, description: e.target.value })}
+                placeholder="Contoh: Mari salurkan infaq terbaik Anda..."
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="he-label">Nama Bank / E-Wallet</label>
+              <input
+                className="form-control he-input"
+                value={cfg.donation?.bankName || ""}
+                onChange={e => update("donation", { ...cfg.donation, bankName: e.target.value })}
+                placeholder="Contoh: BSI (Bank Syariah Indonesia)"
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="he-label">Nomor Rekening</label>
+              <input
+                className="form-control he-input"
+                value={cfg.donation?.accountNumber || ""}
+                onChange={e => update("donation", { ...cfg.donation, accountNumber: e.target.value })}
+                placeholder="Contoh: 7123456789"
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="he-label">Atas Nama</label>
+              <input
+                className="form-control he-input"
+                value={cfg.donation?.accountName || ""}
+                onChange={e => update("donation", { ...cfg.donation, accountName: e.target.value })}
+                placeholder="Contoh: DKM MasjidKu"
+              />
+            </div>
+
+            <div>
+              <label className="he-label">Gambar QRIS (Opsional)</label>
+              {cfg.donation?.qrisUrl ? (
+                <div className="position-relative d-inline-block border rounded p-1 mb-2 bg-white">
+                  <img src={cfg.donation.qrisUrl} alt="QRIS" style={{ height: 100, objectFit: "contain" }} />
+                  <button
+                    className="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
+                    onClick={() => update("donation", { ...cfg.donation, qrisUrl: "" })}
+                    style={{ padding: "2px 6px" }}
+                  >
+                    <FaTimes size={10} />
+                  </button>
+                </div>
+              ) : (
+                <div style={{ position: "relative", overflow: "hidden" }}>
+                  <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2 w-100 justify-content-center" style={{ borderStyle: "dashed" }}>
+                    <FaImage /> Upload QRIS
+                  </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleQrisUpload}
+                    style={{ position: "absolute", top: 0, left: 0, opacity: 0, width: "100%", height: "100%", cursor: "pointer" }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Gaya Navbar */}
           <div className="he-section">
             <div className="he-section-title">Gaya Navbar</div>
@@ -454,7 +611,7 @@ const HeaderEditor = () => {
               <div className="d-flex align-items-center" style={{ gap: 10 }}>
                 {cfg.logoImage ? (
                   <div style={{ width: 40, height: 40, background: "#fff", borderRadius: 8, padding: 4, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)", flexShrink: 0 }}>
-                    <img src={cfg.logoImage} alt="logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    <img src={getFullUrl(cfg.logoImage)} alt="logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                   </div>
                 ) : (
                   <div style={{
@@ -466,7 +623,7 @@ const HeaderEditor = () => {
                   </div>
                 )}
                 <div style={{ fontWeight: 800, fontSize: "0.875rem", color: th.text, letterSpacing: "-0.2px" }}>
-                  {cfg.logoText || "Nama Masjid"}
+                  {displayLogoText}
                 </div>
               </div>
 

@@ -1,6 +1,5 @@
-// Mock API Client using localStorage
-// This replaces the axios-based apiClient for demonstration purposes
-import TEMPLATE_CATALOG from "../data/templates.js";
+// API Client using Axios
+import api from "../utils/api.js";
 
 const delay = (ms = 500) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -9,78 +8,63 @@ const getSlug = () => {
   return user?.slug || user?.mosque_slug;
 };
 
-// Initialize Mock Database
-const initDB = () => {
-  if (!localStorage.getItem("mock_users")) {
-    localStorage.setItem("mock_users", JSON.stringify([]));
-  }
-  if (!localStorage.getItem("mock_mosques")) {
-    localStorage.setItem("mock_mosques", JSON.stringify({}));
-  }
-  if (!localStorage.getItem("mock_posts")) {
-    localStorage.setItem("mock_posts", JSON.stringify({}));
-  }
-};
-
-initDB();
-
 export const authService = {
   login: async (email, password) => {
-    await delay(800);
-    const users = JSON.parse(localStorage.getItem("mock_users") || "[]");
-    let user = users.find((u) => u.email === email && u.password === password);
+    try {
+      const response = await api.post("/v1/auth/login", { email, password });
+      const { user, mosque, token } = response.data.data;
 
-    if (!user) {
+      const userToSave = {
+        ...user,
+        isSetupComplete:
+          user.isSetupComplete || (mosque?.address ? true : false),
+        slug: mosque?.slug || user.slug,
+      };
+
+      localStorage.setItem("mid_auth_token", token);
+      localStorage.setItem("mid_current_user", JSON.stringify(userToSave));
+
+      return {
+        data: {
+          success: true,
+          data: {
+            user: userToSave,
+            mosque,
+            token,
+          },
+        },
+      };
+    } catch (error) {
+      if (error.response) throw error;
       throw { response: { data: { message: "Email atau password salah." } } };
     }
-
-    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
-    const mosque = mosques[user.slug] || null;
-
-    const token = "mock-token-" + Date.now();
-    localStorage.setItem("mid_auth_token", token);
-
-    const userToSave = {
-      ...user,
-      isSetupComplete: user.isSetupComplete || (mosque?.address ? true : false),
-    };
-    localStorage.setItem("mid_current_user", JSON.stringify(userToSave));
-
-    return {
-      data: {
-        success: true,
-        data: {
-          user: userToSave,
-          mosque: mosque,
-          token,
-        },
-      },
-    };
   },
 
   register: async (data) => {
-    await delay(800);
-    const users = JSON.parse(localStorage.getItem("mock_users") || "[]");
-    if (users.find((u) => u.email === data.email)) {
-      throw { response: { data: { message: "Email sudah terdaftar." } } };
+    try {
+      const response = await api.post("/v1/auth/register", data);
+      const { user, mosque, token } = response.data.data;
+
+      const userToSave = {
+        ...user,
+        isSetupComplete: false,
+        slug: mosque?.slug || user.slug,
+      };
+
+      localStorage.setItem("mid_auth_token", token);
+      localStorage.setItem("mid_current_user", JSON.stringify(userToSave));
+
+      return { data: { success: true, data: { user: userToSave } } };
+    } catch (error) {
+      if (error.response) throw error;
+      throw { response: { data: { message: "Pendaftaran gagal." } } };
     }
-
-    const newUser = {
-      id: Date.now(),
-      name: data.name,
-      email: data.email,
-      password: data.password,
-      slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    };
-
-    users.push(newUser);
-    localStorage.setItem("mock_users", JSON.stringify(users));
-
-    return { data: { success: true, data: { user: newUser } } };
   },
 
   logout: async () => {
-    await delay(300);
+    try {
+      await api.post("/v1/auth/logout");
+    } catch (e) {}
     localStorage.removeItem("mid_auth_token");
     localStorage.removeItem("mid_current_user");
     return { success: true };
@@ -89,218 +73,333 @@ export const authService = {
   getCurrentUser: () => JSON.parse(localStorage.getItem("mid_current_user")),
   isAuthenticated: () => !!localStorage.getItem("mid_auth_token"),
   fetchUser: async () => {
-    await delay(300);
-    return {
-      data: { data: JSON.parse(localStorage.getItem("mid_current_user")) },
-    };
+    try {
+      const response = await api.get("/v1/auth/me");
+      const { user, mosque } = response.data.data;
+      const userToSave = {
+        ...user,
+        isSetupComplete: mosque?.address ? true : false,
+        slug: mosque?.slug || user.slug,
+      };
+      localStorage.setItem("mid_current_user", JSON.stringify(userToSave));
+      return { data: { data: userToSave } };
+    } catch (error) {
+      return {
+        data: { data: JSON.parse(localStorage.getItem("mid_current_user")) },
+      };
+    }
   },
 };
 
 export const onboardingService = {
   checkDomain: async (slug) => {
-    await delay(800);
-    // Let's assume the domain is always available for demo
-    return { data: { success: true, message: "Domain tersedia." } };
+    return await api.post("/v1/onboarding/domain/check", { slug });
   },
 
   setDomain: async (slug) => {
-    await delay(800);
+    const res = await api.post("/v1/onboarding/domain/set", { slug });
     const user = authService.getCurrentUser();
     if (user) {
       user.slug = slug;
       localStorage.setItem("mid_current_user", JSON.stringify(user));
-
-      const users = JSON.parse(localStorage.getItem("mock_users") || "[]");
-      const index = users.findIndex((u) => u.id === user.id);
-      if (index !== -1) {
-        users[index].slug = slug;
-        localStorage.setItem("mock_users", JSON.stringify(users));
-      }
-
-      const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
-      if (!mosques[slug]) {
-        mosques[slug] = { slug };
-        localStorage.setItem("mock_mosques", JSON.stringify(mosques));
-      }
     }
-    return { data: { success: true } };
+    return res;
   },
 
   getTemplates: async () => {
-    await delay(300);
-    return {
-      data: {
-        data: TEMPLATE_CATALOG, // ← sumber data terpusat
-      },
-    };
+    const res = await api.get("/v1/onboarding/templates");
+    return { data: { data: res.data.data.templates } };
   },
 
   selectTemplate: async (templateCode) => {
-    await delay(500);
-    const slug = getSlug();
-    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
-    if (!mosques[slug]) mosques[slug] = {};
-    mosques[slug].template_code = templateCode;
-    localStorage.setItem("mock_mosques", JSON.stringify(mosques));
-    return { data: { success: true } };
+    return await api.post("/v1/onboarding/template/select", {
+      template_code: templateCode,
+    });
   },
 
   updateProfile: async (slug, data) => {
-    await delay(800);
-    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
-    mosques[slug] = { ...mosques[slug], ...data };
-    localStorage.setItem("mock_mosques", JSON.stringify(mosques));
-
+    const res = await api.put(`/v1/mosques/${slug}/profile`, data);
     const user = authService.getCurrentUser();
     if (user) {
       user.isSetupComplete = true;
       localStorage.setItem("mid_current_user", JSON.stringify(user));
-
-      const users = JSON.parse(localStorage.getItem("mock_users") || "[]");
-      const index = users.findIndex((u) => u.id === user.id);
-      if (index !== -1) {
-        users[index].isSetupComplete = true;
-        localStorage.setItem("mock_users", JSON.stringify(users));
-      }
     }
+    return { data: { success: true, data: res.data.data.mosque } };
+  },
 
-    return { data: { success: true, data: mosques[slug] } };
+  submitVerification: async (data) => {
+    return await api.post("/v1/onboarding/verification/submit", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  acceptTerms: async () => {
+    return await api.post("/v1/onboarding/terms/accept");
   },
 };
 
 export const dashboardService = {
   getProfile: async () => {
-    await delay(500);
     const slug = getSlug();
-    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
-    return { data: { data: mosques[slug] || {} } };
+    if (!slug) return { data: { data: {} } };
+    const res = await api.get(`/v1/mosques/${slug}/profile`);
+    return { data: { data: res.data.data.mosque } };
   },
   updateProfile: async (data) => {
     return onboardingService.updateProfile(getSlug(), data);
   },
+  uploadLogo: async (file) => {
+    const fd = new FormData();
+    fd.append("logo", file);
+    return await api.post(`/v1/mosques/${getSlug()}/documents`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  uploadProfileImage: async (file) => {
+    const fd = new FormData();
+    fd.append("image", file);
+    return await api.post(`/v1/mosques/${getSlug()}/profile-image`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  deleteProfileImage: async () => {
+    return await api.delete(`/v1/mosques/${getSlug()}/profile-image`);
+  },
+  getSiteSettings: async () => {
+    const slug = getSlug();
+    if (!slug) return {};
+    const res = await api.get(`/v1/mosques/${slug}/profile`);
+    return res.data?.data?.mosque?.site_settings || {};
+  },
+  updateSiteSettings: async (settings) => {
+    const slug = getSlug();
+    const res = await api.put(`/v1/mosques/${slug}/profile`, {
+      site_settings: settings,
+    });
+    return res.data?.data?.mosque || {};
+  },
 };
 
 export const postService = {
-  getPosts: async () => {
-    await delay(500);
+  getPosts: async (type = "") => {
     const slug = getSlug();
-    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
-    const posts = allPosts[slug] || [];
-    return { data: { data: posts } };
+    if (!slug) return { data: { data: [] } };
+    const params = type ? { type } : {};
+    const res = await api.get(`/v1/mosques/${slug}/posts`, { params });
+    const rawData = res.data.data.data || [];
+    const normalized = rawData.map((p) => ({
+      ...p,
+      date: p.event_date || p.article_date || p.date,
+      time: p.event_time || p.time,
+      image: p.cover_image_url || p.image,
+      link: p.target_url || p.link,
+      is_published: p.status === "published",
+    }));
+    return { data: { data: normalized } };
   },
 
   getPost: async (id) => {
-    await delay(300);
     const slug = getSlug();
-    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
-    const post = (allPosts[slug] || []).find((p) => p.id == id);
-    return { data: { data: post } };
+    const res = await api.get(`/v1/mosques/${slug}/posts/${id}`);
+    return { data: { data: res.data.data.post } };
   },
 
   createPost: async (data) => {
-    await delay(500);
     const slug = getSlug();
-    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
-    if (!allPosts[slug]) allPosts[slug] = [];
+    // Use FormData if cover_image is present
+    let payload = data;
+    let config = {};
+    if (data.cover_image instanceof File) {
+      payload = new FormData();
+      Object.keys(data).forEach((key) => {
+        if (data[key] !== null && data[key] !== undefined) {
+          // Convert booleans to 1/0 for Laravel FormData compatibility
+          const val =
+            typeof data[key] === "boolean" ? (data[key] ? 1 : 0) : data[key];
+          payload.append(key, val);
+        }
+      });
+      config.headers = { "Content-Type": "multipart/form-data" };
+    }
+    const res = await api.post(`/v1/mosques/${slug}/posts`, payload, config);
+    let p = res.data.data.post;
 
-    const newPost = {
-      is_published: false,
-      ...data,
-      id: Date.now(),
-      created_at: new Date().toISOString(),
+    // TWO-STEP PUBLISH: Backend requires a separate call to publish
+    if (data.is_published === true || data.is_published === "true" || data.is_published === 1) {
+      const pubRes = await api.post(`/v1/mosques/${slug}/posts/${p.id}/publish`);
+      p = pubRes.data.data.post;
+    }
+
+    const normalized = {
+      ...p,
+      date: p.event_date || p.article_date || p.date,
+      time: p.event_time || p.time,
+      image: p.cover_image_url || p.image,
+      link: p.target_url || p.link,
+      is_published: p.status === "published",
     };
-    allPosts[slug].push(newPost);
-    localStorage.setItem("mock_posts", JSON.stringify(allPosts));
-
-    return { data: { success: true, data: newPost } };
+    return { data: { success: true, data: normalized } };
   },
 
   updatePost: async (id, data) => {
-    await delay(500);
     const slug = getSlug();
-    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
-    const index = (allPosts[slug] || []).findIndex((p) => p.id == id);
-    if (index !== -1) {
-      allPosts[slug][index] = { ...allPosts[slug][index], ...data };
-      localStorage.setItem("mock_posts", JSON.stringify(allPosts));
+    let payload = data;
+    let config = {};
+    let res;
+    // In Laravel, multipart PUT requests are handled by sending a POST request with _method=PUT
+    if (data.cover_image instanceof File) {
+      payload = new FormData();
+      Object.keys(data).forEach((key) => {
+        if (data[key] !== null && data[key] !== undefined) {
+          const val =
+            typeof data[key] === "boolean" ? (data[key] ? 1 : 0) : data[key];
+          payload.append(key, val);
+        }
+      });
+      payload.append("_method", "PUT");
+      config.headers = { "Content-Type": "multipart/form-data" };
+      res = await api.post(
+        `/v1/mosques/${slug}/posts/${id}`,
+        payload,
+        config,
+      );
+    } else {
+      res = await api.put(
+        `/v1/mosques/${slug}/posts/${id}`,
+        payload,
+        config,
+      );
     }
-    return { data: { success: true } };
+
+    let p = res.data?.data?.post;
+
+    // TWO-STEP PUBLISH:
+    if (data.is_published === true || data.is_published === "true" || data.is_published === 1) {
+      const pubRes = await api.post(`/v1/mosques/${slug}/posts/${id}/publish`);
+      p = pubRes.data?.data?.post || p;
+    } else if (data.is_published !== undefined) {
+      const unpubRes = await api.post(`/v1/mosques/${slug}/posts/${id}/unpublish`);
+      p = unpubRes.data?.data?.post || p;
+    }
+
+    const normalized = {
+      ...p,
+      date: p.event_date || p.article_date || p.date,
+      time: p.event_time || p.time,
+      image: p.cover_image_url || p.image,
+      link: p.target_url || p.link,
+      is_published: p.status === "published",
+    };
+
+    return { data: { success: true, data: normalized } };
   },
 
   deletePost: async (id) => {
-    await delay(500);
     const slug = getSlug();
-    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
-    if (allPosts[slug]) {
-      allPosts[slug] = allPosts[slug].filter((p) => p.id != id);
-      localStorage.setItem("mock_posts", JSON.stringify(allPosts));
-    }
+    await api.delete(`/v1/mosques/${slug}/posts/${id}`);
     return { data: { success: true } };
   },
 
   publishPost: async (id) => {
-    await delay(500);
     const slug = getSlug();
-    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
-    const index = (allPosts[slug] || []).findIndex((p) => p.id == id);
-    if (index !== -1) {
-      allPosts[slug][index].is_published = true;
-      localStorage.setItem("mock_posts", JSON.stringify(allPosts));
-    }
+    await api.post(`/v1/mosques/${slug}/posts/${id}/publish`);
     return { data: { success: true } };
   },
 
   unpublishPost: async (id) => {
-    await delay(500);
     const slug = getSlug();
-    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
-    const index = (allPosts[slug] || []).findIndex((p) => p.id == id);
-    if (index !== -1) {
-      allPosts[slug][index].is_published = false;
-      localStorage.setItem("mock_posts", JSON.stringify(allPosts));
-    }
+    await api.post(`/v1/mosques/${slug}/posts/${id}/unpublish`);
     return { data: { success: true } };
+  },
+
+  addGalleryImages: async (id, formData) => {
+    const slug = getSlug();
+    const res = await api.post(`/v1/mosques/${slug}/posts/${id}/gallery`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return { data: { success: true, data: res.data.data.post } };
+  },
+
+  removeGalleryImage: async (id, imagePath) => {
+    const slug = getSlug();
+    const res = await api.delete(`/v1/mosques/${slug}/posts/${id}/gallery`, {
+      data: { image: imagePath },
+    });
+    return { data: { success: true, data: res.data.data.post } };
   },
 };
 
 export const publicService = {
   getMasjidProfile: async (slug) => {
-    await delay(500);
-    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
-    return { data: { data: mosques[slug] || {} } };
+    const res = await api.get(`/v1/public/${slug}/profile`);
+    return { data: { data: res.data.data.mosque } };
   },
   getMasjidPosts: async (slug, type = "") => {
-    await delay(500);
-    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
-    let posts = allPosts[slug] || [];
-    if (type) {
-      posts = posts.filter((p) => p.type === type);
-    }
-    return { data: { data: posts.filter((p) => p.is_published) } };
+    const params = type ? { type } : {};
+    const res = await api.get(`/v1/public/${slug}/posts`, { params });
+    return { data: { data: res.data.data.posts.data || [] } };
   },
   getMasjidPostDetail: async (slug, postSlug) => {
-    await delay(300);
-    const allPosts = JSON.parse(localStorage.getItem("mock_posts") || "{}");
-    const post = (allPosts[slug] || []).find((p) => p.slug === postSlug);
-    return { data: { data: post } };
+    const res = await api.get(`/v1/public/${slug}/posts/${postSlug}`);
+    return { data: { data: res.data.data.post } };
   },
 };
 
 export const prayerService = {
-  getProvinces: async () => ({ data: { data: [] } }), // fallback
-  getCities: async (data) => ({ data: { data: [] } }),
-  getSchedule: async (data) => ({ data: { data: {} } }),
+  getProvinces: async (slug) => {
+    const res = await api.get(`/v1/public/${slug}/prayer/provinces`);
+    return { data: { data: res.data.data } };
+  },
+  getCities: async (slug, data) => {
+    const res = await api.post(`/v1/public/${slug}/prayer/cities`, data);
+    return { data: { data: res.data.data } };
+  },
+  getSchedule: async (slug, data) => {
+    const res = await api.post(`/v1/public/${slug}/prayer/schedule`, data);
+    return { data: { data: res.data.data } };
+  },
 };
 
-// GeoService using Vite Proxy to bypass browser/CORS/Adblock blocks
+// GeoService using Real API with simple in-memory cache
+const geoCache = {};
+
 export const geoService = {
-  getProvinces: () => fetch("/api-wilayah/provinces").then((r) => r.json()),
-  getRegencies: (slug, provinceId) =>
-    fetch(`/api-wilayah/regencies/${provinceId}`).then((r) => r.json()),
-  getDistricts: (slug, regencyId) =>
-    fetch(`/api-wilayah/districts/${regencyId}`).then((r) => r.json()),
-  getVillages: (slug, districtId) =>
-    fetch(`/api-wilayah/villages/${districtId}`).then((r) => r.json()),
+  getProvinces: async () => {
+    if (geoCache.provinces) return { data: geoCache.provinces };
+    const r = await api.get("/v1/regions/provinces");
+    geoCache.provinces = r.data.data;
+    return { data: r.data.data };
+  },
+  getRegencies: async (slug, provinceId) => {
+    const key = `reg_${provinceId}`;
+    if (geoCache[key]) return { data: geoCache[key] };
+    const r = await api.get(`/v1/regions/regencies/${provinceId}`);
+    geoCache[key] = r.data.data;
+    return { data: r.data.data };
+  },
+  getDistricts: async (slug, regencyId) => {
+    const key = `dist_${regencyId}`;
+    if (geoCache[key]) return { data: geoCache[key] };
+    const r = await api.get(`/v1/regions/districts/${regencyId}`);
+    geoCache[key] = r.data.data;
+    return { data: r.data.data };
+  },
+  getVillages: async (slug, districtId) => {
+    const key = `vill_${districtId}`;
+    if (geoCache[key]) return { data: geoCache[key] };
+    const r = await api.get(`/v1/regions/villages/${districtId}`);
+    geoCache[key] = r.data.data;
+    return { data: r.data.data };
+  },
+};
+
+// ─── Super Admin Service ───
+export const adminService = {
+  getDashboard: () => api.get("/v1/admin/dashboard"),
+  getVerifications: (params = {}) => api.get("/v1/admin/verifications", { params }),
+  getVerificationDetail: (mosqueId) => api.get(`/v1/admin/verifications/${mosqueId}`),
+  approveVerification: (mosqueId, data = {}) => api.post(`/v1/admin/verifications/${mosqueId}/approve`, data),
+  rejectVerification: (mosqueId, data) => api.post(`/v1/admin/verifications/${mosqueId}/reject`, data),
 };
 
 export default {
@@ -311,4 +410,5 @@ export default {
   publicService,
   prayerService,
   geoService,
+  adminService,
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { authService, publicService } from "../../services/apiClient";
+import { authService, publicService, prayerService } from "../../services/apiClient";
 import BrandLogo from "../../components/common/BrandLogo";
 
 const TvDisplay = () => {
@@ -27,30 +27,77 @@ const TvDisplay = () => {
         const profileRes = await publicService.getMasjidProfile(slug);
         const profile = profileRes.data?.data || { name: "Masjid Agung", address: "Jln. Raya Masjid No. 1, Kota Impian" };
         
-        // Prayer Times (Local Storage fallback)
-        const savedPrayer = JSON.parse(localStorage.getItem(`mid_prayer_${slug}`) || "null");
-        const prayerTimes = savedPrayer || {
-          fajr: "04:30", dhuhr: "12:00", asr: "15:15", maghrib: "18:00", isha: "19:15"
-        };
+        // Prayer Config: prioritas site_settings.prayer_config, fallback ke province/city dari profil
+        const savedPrayerConfig = profile.site_settings?.prayer_config || null;
+        const prayerProvince = savedPrayerConfig?.province || profile.province || "";
+        const prayerCity = savedPrayerConfig?.city || profile.city || "";
+        let prayerTimes = { fajr: "04:30", dhuhr: "12:00", asr: "15:15", maghrib: "18:00", isha: "19:15" };
+        
+        if (prayerProvince && prayerCity) {
+            try {
+                const todayMonth = new Date().getMonth() + 1;
+                const todayYear = new Date().getFullYear();
+                const todayDay = new Date().getDate();
+                const prayerRes = await prayerService.getSchedule(slug, {
+                    provinsi: prayerProvince,
+                    kabkota: prayerCity,
+                    bulan: todayMonth,
+                    tahun: todayYear
+                });
+                
+                // Normalize response shape
+                const rawData = prayerRes.data?.data;
+                const list = Array.isArray(rawData) ? rawData
+                  : Array.isArray(rawData?.jadwal) ? rawData.jadwal
+                  : Array.isArray(rawData?.data) ? rawData.data
+                  : [];
+                let entry = list.find((d) => parseInt(d.tanggal || d.hari || d.date || d.no || "", 10) === todayDay);
+                if (!entry && list.length >= todayDay) entry = list[todayDay - 1];
+                if (!entry) entry = list[0];
+                
+                if (entry) {
+                    prayerTimes = {
+                        fajr: entry.subuh || prayerTimes.fajr,
+                        dhuhr: entry.dzuhur || prayerTimes.dhuhr,
+                        asr: entry.ashar || prayerTimes.asr,
+                        maghrib: entry.maghrib || prayerTimes.maghrib,
+                        isha: entry.isya || prayerTimes.isha
+                    };
+                }
+            } catch (err) {
+                console.error("Prayer fetch failed", err);
+            }
+        }
 
-        // Finances for marquee
-        const donations = JSON.parse(localStorage.getItem("mid_donations") || "[]");
-        const expenses = JSON.parse(localStorage.getItem("mid_expenses") || "[]");
-        const totalIncome = donations.reduce((s, d) => s + Number(d.amount || 0), 0);
-        const totalExpense = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-        const balance = totalIncome - totalExpense;
 
         // Fetch Slides (Kajian / Gallery)
-        const kajianRes = await publicService.getMasjidPosts(slug, "kajian");
-        const kajianList = kajianRes.data?.data || [];
+        const kajianRes = await publicService.getMasjidPosts(slug, "pengumuman");
+        const kajianList = (kajianRes.data?.data || []).map(p => ({
+          ...p,
+          image: p.cover_image_url || p.image
+        }));
         
-        // Ambil data Galeri dari LocalStorage
-        const gallery = JSON.parse(localStorage.getItem(`mid_gallery_${slug}`) || "[]");
+        // Fetch Gallery
+        const galleryRes = await publicService.getMasjidPosts(slug, "gallery");
+        let galleryImages = [];
+        if (galleryRes.data?.data?.length > 0) {
+          galleryImages = galleryRes.data.data[0].gallery_images || [];
+        }
+
+        const getFullUrl = (path) => {
+          if (!path) return "";
+          if (path.startsWith("http")) return path;
+          const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+          const baseUrl = apiUrl.replace(/\/api$/, "");
+          return `${baseUrl}/storage/${path}`;
+        };
+
+        const formattedGallery = galleryImages.map(path => getFullUrl(path));
         
         // Gabungkan gambar dari Galeri dan Kajian
         let extractedSlides = [
-          ...gallery.map(g => g.image_url || g.url || g.image || g.thumbnail),
-          ...kajianList.map(k => k.image_url || k.thumbnail)
+          ...formattedGallery,
+          ...kajianList.map(k => k.image_url || k.image || k.thumbnail)
         ].filter(Boolean); // Hapus yang kosong
         
         if (extractedSlides.length === 0) {
@@ -64,8 +111,7 @@ const TvDisplay = () => {
 
         setConfig({
           profile,
-          prayer: prayerTimes,
-          finance: { totalIncome, totalExpense, balance }
+          prayer: prayerTimes
         });
         setSlides(extractedSlides);
 
@@ -312,7 +358,7 @@ const TvDisplay = () => {
               Selamat datang di <span className="tv-marquee-highlight">{config.profile.name}</span>. Mari luruskan dan rapatkan shaf sebelum sholat dimulai.
             </span>
             <span className="tv-marquee-item">
-              Laporan Keuangan: Total Pemasukan <span className="tv-marquee-highlight">{fmtRp(config.finance.totalIncome)}</span> | Total Pengeluaran <span className="tv-marquee-highlight">{fmtRp(config.finance.totalExpense)}</span> | Saldo Akhir Kas <span className="tv-marquee-highlight">{fmtRp(config.finance.balance)}</span>.
+              Selamat Datang di {config.profile.name}. Luruskan dan rapatkan shaf sebelum sholat berjamaah dimulai. Matikan alat komunikasi agar ibadah lebih khusyuk.
             </span>
             <span className="tv-marquee-item">
               Matikan atau nada getarkan handphone Anda saat khutbah berlangsung atau saat sholat berjamaah.

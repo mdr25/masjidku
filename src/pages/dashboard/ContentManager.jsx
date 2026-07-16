@@ -12,6 +12,7 @@ import {
   FaLink,
   FaArrowRight,
   FaMosque,
+  FaWallet,
 } from "react-icons/fa";
 
 const contentSections = [
@@ -36,7 +37,7 @@ const contentSections = [
   {
     id: "profil",
     title: "Profil Masjid",
-    description: "Nama, deskripsi, visi & misi, alamat, dan kontak yang tampil di halaman Profil website.",
+    description: "Nama, deskripsi, alamat, dan kontak yang tampil di halaman Profil website.",
     icon: <FaMosque size={22} />,
     link: "/app/profile",
     color: "#1A5C45",
@@ -72,8 +73,8 @@ const contentSections = [
   },
   {
     id: "articles",
-    title: "Artikel & Berita",
-    description: "Tulis dan kelola artikel atau berita masjid.",
+    title: "Berita Masjid",
+    description: "Tulis dan kelola berita seputar masjid.",
     icon: <FaNewspaper size={22} />,
     link: "/app/info/articles",
     color: "#C62828",

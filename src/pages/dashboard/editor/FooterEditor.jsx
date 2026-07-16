@@ -9,7 +9,7 @@ import {
 
 
 /* ── Storage key ── */
-import { authService } from "../../../services/apiClient";
+import { authService, dashboardService } from "../../../services/apiClient";
 
 /* ── Social platforms config ── */
 const PLATFORMS = [
@@ -33,8 +33,7 @@ const DEFAULT_FOOTER = {
    ════════════════════════════════════════════════════════ */
 const FooterEditor = () => {
   const user = authService.getCurrentUser();
-  const userSlug = user?.slug || user?.mosque_slug || "demo";
-  const STORAGE_KEY = `mid_site_config_${userSlug}`;
+  const [allSettings, setAllSettings] = useState({});
 
   const [form,     setForm]     = useState(DEFAULT_FOOTER);
   const [original, setOriginal] = useState(DEFAULT_FOOTER);
@@ -47,31 +46,30 @@ const FooterEditor = () => {
 
   /* ── Load ── */
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const saved = parsed.footer || {};
-      const merged = {
-        social:   { ...DEFAULT_FOOTER.social,   ...(saved.social   || {}) },
-        contact:  { ...DEFAULT_FOOTER.contact,  ...(saved.contact  || {}) },
-        tagline:  saved.tagline   || "",
-        copyrightText: saved.copyrightText || "",
-      };
-      setForm(merged);
-      setOriginal(merged);
+    const load = async () => {
+      try {
+        const settings = await dashboardService.getSiteSettings();
+        setAllSettings(settings);
 
-      // Profile name for preview
-      if (parsed.profile?.name) setMosqueName(parsed.profile.name);
-    }
-    // Also try mock_mosques
-    try {
-      const user = JSON.parse(localStorage.getItem("mid_user") || "{}");
-      const slug = user.slug || "";
-      if (slug) {
-        const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
-        if (mosques[slug]?.name) setMosqueName(mosques[slug].name);
+        const saved = settings.footer || {};
+        const merged = {
+          social:   { ...DEFAULT_FOOTER.social,   ...(saved.social   || {}) },
+          contact:  { ...DEFAULT_FOOTER.contact,  ...(saved.contact  || {}) },
+          tagline:  saved.tagline   || "",
+          copyrightText: saved.copyrightText || "",
+        };
+        setForm(merged);
+        setOriginal(merged);
+
+        // Profile name for preview
+        const profileRes = await dashboardService.getProfile();
+        const name = profileRes.data?.data?.name;
+        if (name) setMosqueName(name);
+      } catch (e) {
+        console.warn("Failed to load footer config", e);
       }
-    } catch { /* ignore */ }
+    };
+    load();
   }, []);
 
   /* ── Toast ── */
@@ -88,11 +86,10 @@ const FooterEditor = () => {
   const handleSave = async () => {
     if (!isDirty) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 350));
     try {
-      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      const updated  = { ...existing, footer: form };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      const updated = { ...allSettings, footer: form };
+      await dashboardService.updateSiteSettings(updated);
+      setAllSettings(updated);
       setOriginal(form);
       showToast("success", "Footer & Sosmed berhasil disimpan!");
     } catch {

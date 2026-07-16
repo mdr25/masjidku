@@ -7,64 +7,42 @@ import TEMPLATE_CATALOG from "../../data/templates";
 // ─── Template catalog ──────────────────────────────────────────────────────────
 const TEMPLATES = TEMPLATE_CATALOG;
 
-// ─── localStorage helpers: baca & tulis langsung tanpa lapisan API ─────────────
-// Setup menyimpan di: mock_mosques[slug].template_code
-// Slug diambil dari mid_current_user.slug
-
-const getActiveSlug = () => {
-  try {
-    const user = JSON.parse(localStorage.getItem("mid_current_user") || "{}");
-    return user?.slug || user?.mosque_slug || "masjid-demo";
-  } catch { return "masjid-demo"; }
-};
-
-const readTemplateFromStorage = () => {
-  try {
-    const slug   = getActiveSlug();
-    const mosque = JSON.parse(localStorage.getItem("mock_mosques") || "{}")[slug] || {};
-    // template_code disimpan oleh Setup (Step5Terms → onboardingService.updateProfile)
-    if (mosque.template_code) return mosque.template_code;
-  } catch { /* abaikan */ }
-  return "template-1"; // fallback default
-};
-
-const writeTemplateToStorage = (templateId) => {
-  try {
-    const slug    = getActiveSlug();
-    const mosques = JSON.parse(localStorage.getItem("mock_mosques") || "{}");
-    if (!mosques[slug]) mosques[slug] = {};
-    mosques[slug].template_code = templateId;
-    localStorage.setItem("mock_mosques", JSON.stringify(mosques));
-  } catch { /* abaikan */ }
-};
+import { dashboardService, onboardingService } from "../../services/apiClient";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 const ThemePage = () => {
-  // Inisialisasi langsung dari localStorage — tidak ada async, tidak ada loading state
-  const [active, setActive] = useState(() => readTemplateFromStorage());
+  const [active, setActive] = useState(null);
   const [saving, setSaving] = useState(null);
   const [saved,  setSaved]  = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Re-baca jika user berubah (misal setelah login ulang)
   useEffect(() => {
-    setActive(readTemplateFromStorage());
+    dashboardService.getProfile().then(res => {
+      setActive(res.data.data.template_code || "TEMPLATE_A");
+      setLoading(false);
+    }).catch(() => {
+      setActive("TEMPLATE_A");
+      setLoading(false);
+    });
   }, []);
 
-  const handleActivate = (templateId) => {
+  const handleActivate = async (templateId) => {
     if (templateId === active || saving) return;
     const tpl = TEMPLATES.find(t => t.id === templateId);
     if (!tpl?.ready) return;
 
     setSaving(templateId);
-
-    // Simulasi delay proses untuk feedback UX yang lebih baik
-    setTimeout(() => {
-      writeTemplateToStorage(templateId);
+    try {
+      await onboardingService.selectTemplate(templateId);
       setActive(templateId);
-      setSaving(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
-    }, 600);
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menyimpan template. Silakan coba lagi.");
+    } finally {
+      setSaving(null);
+    }
   };
 
   /* ── CSS ── */
@@ -149,6 +127,14 @@ const ThemePage = () => {
   `;
 
   const activeTemplate = TEMPLATES.find(t => t.id === active);
+
+  if (loading) {
+    return (
+      <div className="tp-page d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+        <Spinner animation="border" style={{ color: "#1A5C45" }} />
+      </div>
+    );
+  }
 
   return (
     <div className="tp-page">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Spinner } from "react-bootstrap";
-import { authService } from "../../../services/apiClient";
+import { authService, dashboardService } from "../../../services/apiClient";
 import {
   FaArrowLeft, FaSave, FaEye, FaCheck, FaImage,
   FaMosque, FaArrowRight, FaHeart, FaTimesCircle, FaCheckCircle
@@ -10,8 +10,7 @@ import {
 // ─── HeroEditor — Kelola Hero / Banner Template ─────────────────────────────
 const HeroEditor = () => {
   const user = authService.getCurrentUser();
-  const userSlug = user?.slug || user?.mosque_slug || "demo";
-  const STORAGE_KEY = `mid_site_config_${userSlug}`;
+  const [allSettings, setAllSettings] = useState({});
 
   const defaultHero = {
     title: "Bersama Makmur dan Memakmurkan Masjid",
@@ -31,20 +30,28 @@ const HeroEditor = () => {
   const [profileName, setProfileName] = useState("Masjid Al-Iman");
   const [headerCfg, setHeaderCfg] = useState({});
 
-  useEffect(() => {
-    try {
-      const user = authService.getCurrentUser();
-      const defaultName = user?.name || "Masjid Al-Iman";
-      setProfileName(defaultName);
+  const getFullUrl = (path) => {
+    if (!path) return "";
+    if (path.startsWith("http") || path.startsWith("blob:") || path.startsWith("data:")) return path;
+    const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+    const baseUrl = apiUrl.replace(/\/api$/, "");
+    return `${baseUrl}/storage/${path}`;
+  };
 
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.hero)    setHero({ ...defaultHero, ...parsed.hero });
-        if (parsed.profile?.name) setProfileName(parsed.profile.name);
-        if (parsed.header) setHeaderCfg(parsed.header);
-      }
-    } catch (e) { console.warn("Failed to load hero config", e); }
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const defaultName = user?.name || "Masjid Al-Iman";
+        setProfileName(defaultName);
+
+        const settings = await dashboardService.getSiteSettings();
+        setAllSettings(settings);
+
+        if (settings.hero)    setHero({ ...defaultHero, ...settings.hero });
+        if (settings.header)  setHeaderCfg(settings.header);
+      } catch (e) { console.warn("Failed to load hero config", e); }
+    };
+    load();
   }, []);
 
   const update = useCallback((key, value) => {
@@ -53,16 +60,21 @@ const HeroEditor = () => {
     if (key === "image") setImgError(false);
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
-      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, hero }));
-      setSaving(false);
+    try {
+      const updated = { ...allSettings, hero };
+      await dashboardService.updateSiteSettings(updated);
+      setAllSettings(updated);
       setSaved(true);
       setIsDirty(false);
       setTimeout(() => setSaved(false), 2500);
-    }, 600); // Simulated delay for better UX
+    } catch (e) {
+      console.error("Failed to save hero config", e);
+      alert("Gagal menyimpan. Silakan coba lagi.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const quickImages = [
@@ -332,7 +344,7 @@ const HeroEditor = () => {
                   <option value="profil">Profil Masjid</option>
                   <option value="program">Program</option>
                   <option value="kajian">Kajian</option>
-                  <option value="artikel">Artikel & Berita</option>
+                  <option value="artikel">Berita</option>
                   <option value="galeri">Galeri</option>
                   <option value="kontak">Kontak / Footer</option>
                 </select>
@@ -348,7 +360,7 @@ const HeroEditor = () => {
                   <option value="profil">Profil Masjid</option>
                   <option value="program">Program</option>
                   <option value="kajian">Kajian</option>
-                  <option value="artikel">Artikel & Berita</option>
+                  <option value="artikel">Berita</option>
                   <option value="galeri">Galeri</option>
                   <option value="kontak">Kontak / Footer</option>
                 </select>
@@ -479,7 +491,7 @@ const HeroEditor = () => {
             <div className="d-flex align-items-center" style={{ gap: 10 }}>
               {headerCfg.logoImage ? (
                 <div style={{ width: 32, height: 32, background: "#fff", borderRadius: 8, padding: 3, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.15)", flexShrink: 0 }}>
-                  <img src={headerCfg.logoImage} alt="logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                  <img src={getFullUrl(headerCfg.logoImage)} alt="logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
               ) : (
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(201,168,76,0.18)", border: "1px solid rgba(201,168,76,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>

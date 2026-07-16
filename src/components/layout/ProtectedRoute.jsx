@@ -10,6 +10,11 @@ const ProtectedRoute = () => {
     }
     
     const user = authService.getCurrentUser();
+    
+    if (user?.role === "super_admin") {
+        return <Navigate to="/superadmin" replace />;
+    }
+    
     const isSetupRoute = location.pathname.startsWith('/setup');
     
     if (user) {

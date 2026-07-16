@@ -25,6 +25,7 @@ const ProgramList = () => {
   const [editId, setEditId]     = useState(null);
   const [saving, setSaving]     = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [toast, setToast]       = useState(null);
   const [imgPreview, setImgPreview] = useState("");
   const [imgDragging, setImgDragging] = useState(false);
@@ -38,7 +39,7 @@ const ProgramList = () => {
     try {
       const res = await postService.getPosts();
       const all = res.data?.data || [];
-      setList(all.filter((p) => p.type === "program"));
+      setList(all.filter((p) => p.type === "kegiatan"));
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -59,7 +60,7 @@ const ProgramList = () => {
     reader.onload = (e) => {
       const b64 = e.target.result;
       setImgPreview(b64);
-      setForm((p) => ({ ...p, image: b64 }));
+      setForm((p) => ({ ...p, image: b64, imageFile: file }));
     };
     reader.readAsDataURL(file);
   };
@@ -85,8 +86,8 @@ const ProgramList = () => {
       content:      item.content      || "",
       image:        item.image        || "",
       imageFile:    null,
-      link:         item.link         || "",
-      is_published: !!item.is_published,
+      link:         item.target_url   || item.link || "",
+      is_published: item.status ? item.status === "published" : (item.is_published !== false),
     });
     setImgPreview(item.image || "");
     setEditId(item.id);
@@ -108,13 +109,21 @@ const ProgramList = () => {
     if (!form.title.trim()) return;
     setSaving(true);
     try {
-      const { imageFile, ...saveData } = form;
+      const { imageFile, link, ...saveData } = form;
+      if (imageFile) saveData.cover_image = imageFile;
+      
+      const payload = {
+          ...saveData,
+          type: "kegiatan",
+          target_url: link
+      };
+      
       if (editId) {
-        await postService.updatePost(editId, { ...saveData, type: "program" });
-        setList((prev) => prev.map((p) => p.id === editId ? { ...p, ...saveData } : p));
+        await postService.updatePost(editId, payload);
+        setList((prev) => prev.map((p) => p.id === editId ? { ...p, ...payload } : p));
       } else {
-        const res = await postService.createPost({ ...saveData, type: "program" });
-        const created = res.data?.data || { ...saveData, id: Date.now(), type: "program" };
+        const res = await postService.createPost(payload);
+        const created = res.data?.data || { ...payload, id: Date.now() };
         setList((prev) => [created, ...prev]);
       }
       showToast("success", editId ? "Program berhasil diperbarui!" : "Program berhasil ditambahkan!");
@@ -128,15 +137,22 @@ const ProgramList = () => {
 
 
   /* ── Delete ── */
-  const handleDelete = async (id) => {
-    if (!window.confirm("Hapus program ini?")) return;
+  const handleDelete = (id) => {
+    setConfirmDelete(id);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDelete) return;
+    const id = confirmDelete;
     setDeleting(id);
+    setConfirmDelete(null);
     try {
       await postService.deletePost(id);
-      setList((prev) => prev.filter((p) => p.id !== id));
-      showToast("success", "Program dihapus.");
-    } catch {
-      showToast("error", "Gagal menghapus.");
+      await load();
+      showToast("success", "Program berhasil dihapus.");
+    } catch (e) {
+      const msg = e.response?.data?.message || "Gagal menghapus program.";
+      showToast("error", msg);
     } finally {
       setDeleting(null);
     }
@@ -214,6 +230,18 @@ const ProgramList = () => {
     /* Empty */
     .pg-empty { text-align: center; padding: 52px 24px; }
     .pg-empty-icon { width: 60px; height: 60px; border-radius: 16px; background: #F5F6F8; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+
+    /* Modal */
+    .pg-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; width: 400px; max-width: 90vw; z-index: 1050; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); padding: 24px; animation: pgZoomIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; }
+    @keyframes pgZoomIn { from{opacity:0;transform:translate(-50%, -45%) scale(0.95)} to{opacity:1;transform:translate(-50%, -50%) scale(1)} }
+    .pg-modal-icon { width: 56px; height: 56px; border-radius: 50%; background: #FEE2E2; display: flex; align-items: center; justify-content: center; color: #EF4444; margin: 0 auto 16px; }
+    .pg-modal-title { font-size: 1.125rem; font-weight: 800; color: #1a1a1a; margin-bottom: 8px; }
+    .pg-modal-desc { font-size: 0.9375rem; color: #6B7280; margin-bottom: 24px; line-height: 1.5; }
+    .pg-modal-actions { display: flex; gap: 12px; }
+    .pg-btn-cancel { flex: 1; padding: 10px 0; border-radius: 10px; background: #fff; border: 1.5px solid #EAECF0; color: #344054; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .pg-btn-cancel:hover { background: #F9FAFB; border-color: #D0D5DD; }
+    .pg-btn-confirm { flex: 1; padding: 10px 0; border-radius: 10px; background: #EF4444; border: none; color: #fff; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .pg-btn-confirm:hover { background: #DC2626; box-shadow: 0 4px 12px rgba(239,68,68,0.2); }
 
     /* ── Drawer ── */
     .pg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1040; backdrop-filter: blur(2px); animation: pgFadeIn 0.2s ease; }
@@ -530,6 +558,30 @@ const ProgramList = () => {
           {toast.msg}
         </div>
       )}
+      {/* ── Modal Konfirmasi Hapus ── */}
+      {confirmDelete && (
+        <>
+          <div className="pg-overlay" onClick={() => setConfirmDelete(null)} />
+          <div className="pg-modal">
+            <div className="pg-modal-icon">
+              <FaTrash size={24} />
+            </div>
+            <div className="pg-modal-title">Hapus Program</div>
+            <div className="pg-modal-desc">
+              Apakah Anda yakin ingin menghapus program ini? Tindakan ini tidak dapat dibatalkan.
+            </div>
+            <div className="pg-modal-actions">
+              <button className="pg-btn-cancel" onClick={() => setConfirmDelete(null)}>
+                Batal
+              </button>
+              <button className="pg-btn-confirm" onClick={confirmDeleteAction}>
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
     </div>
   );
 };

@@ -12,9 +12,9 @@
 const TEMPLATE_CATALOG = [
   {
     // ── identifiers ──────────────────────────────────────────────────────────
-    id: "template-1",
-    template_code: "template-1",
-    code: "template-1",
+    id: "TEMPLATE_A",
+    template_code: "TEMPLATE_A",
+    code: "TEMPLATE_A",
 
     // ── label ────────────────────────────────────────────────────────────────
     name: "Zamrud Harmoni",
@@ -32,9 +32,9 @@ const TEMPLATE_CATALOG = [
     gradientTo: "#1A5C45",
   },
   {
-    id: "template-2",
-    template_code: "template-2",
-    code: "template-2",
+    id: "TEMPLATE_B",
+    template_code: "TEMPLATE_B",
+    code: "TEMPLATE_B",
     name: "Biru Andalusia",
     desc: "Biru safir elegan dengan sentuhan perak. Kesan bersih dan profesional.",
     tags: ["Elegan", "Profesional"],

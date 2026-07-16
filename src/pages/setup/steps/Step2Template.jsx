@@ -4,10 +4,10 @@ import { FaCheck, FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import TEMPLATE_CATALOG from "../../../data/templates";
 
 const Step2Template = ({ data, updateData, onNext, onBack }) => {
-  // Set default ke template-1 jika belum ada pilihan
-  useState(() => {
-    if (!data.templateId) updateData("templateId", "template-1");
-  });
+  // Set default ke TEMPLATE_A jika belum ada pilihan
+  React.useEffect(() => {
+    if (!data.templateId) updateData("templateId", "TEMPLATE_A");
+  }, []);
 
   const css = `
     .s2-card {

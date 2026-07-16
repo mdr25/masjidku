@@ -4,32 +4,20 @@ import {
   FaMapMarkerAlt, FaSyncAlt, FaSave, FaMosque,
   FaCheckCircle, FaExclamationCircle, FaInfoCircle, FaArrowLeft,
 } from "react-icons/fa";
-import { authService } from "../../../services/apiClient";
+import { authService, publicService, dashboardService, prayerService } from "../../../services/apiClient";
 
 /* ════════════════════════════════════════════════════════
-   PRAYER API helpers — via Vite proxy /api-prayer → equran.id/api/v2/shalat
+   PRAYER API helpers — wrapper around prayerService (apiClient.js)
    ════════════════════════════════════════════════════════ */
-const PRAYER_BASE_URL = "/api-prayer";
-
 const prayerAPI = {
   getProvinces: (slug) =>
-    fetch(`${PRAYER_BASE_URL}/api/v1/public/${slug}/prayer/provinces`, { 
-      headers: { Accept: "application/json" } 
-    }).then((r) => r.json()),
+    prayerService.getProvinces(slug).then((res) => res.data),
 
   getCities: (slug, provinsi) =>
-    fetch(`${PRAYER_BASE_URL}/api/v1/public/${slug}/prayer/cities`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ provinsi }),
-    }).then((r) => r.json()),
+    prayerService.getCities(slug, { provinsi }).then((res) => res.data),
 
   getSchedule: (slug, provinsi, kabkota, bulan, tahun) =>
-    fetch(`${PRAYER_BASE_URL}/api/v1/public/${slug}/prayer/schedule`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ provinsi, kabkota, bulan, tahun }),
-    }).then((r) => r.json()),
+    prayerService.getSchedule(slug, { provinsi, kabkota, bulan, tahun }).then((res) => res.data),
 };
 
 /* ── Normalize API list response (handles string[] or {nama}[] or {id,nama}[]) ── */
@@ -67,13 +55,6 @@ const PRAYERS = [
   { key: "isya",    label: "Isya",    emoji: "🌃", templateKey: "isha"    },
 ];
 
-  const user = authService.getCurrentUser();
-  const userSlug = user?.slug || user?.mosque_slug;
-  const STORAGE_KEY  = `mid_prayer_config_${userSlug}`;
-  const SCHEDULE_KEY = `mid_prayer_${userSlug}`;
-
-const DEFAULT_IQAMAH = { subuh: 15, dzuhur: 10, ashar: 10, maghrib: 5, isya: 10 };
-const DEFAULT_IMAM   = { subuh: "", dzuhur: "", ashar: "", maghrib: "", isya: "" };
 
 const today      = new Date();
 const todayDay   = today.getDate();
@@ -84,10 +65,12 @@ const todayYear  = today.getFullYear();
    MAIN COMPONENT
    ════════════════════════════════════════════════════════ */
 const PrayerSchedule = () => {
+  const user = authService.getCurrentUser();
+  const userSlug = user?.slug || user?.mosque_slug;
+  const [allSettings, setAllSettings] = useState({});
+
   const [province,      setProvince]      = useState("");
   const [city,          setCity]          = useState("");
-  const [imam,          setImam]          = useState(DEFAULT_IMAM);
-  const [iqamah,        setIqamah]        = useState(DEFAULT_IQAMAH);
 
   const [provinces,     setProvinces]     = useState([]);
   const [cities,        setCities]        = useState([]);
@@ -101,69 +84,161 @@ const PrayerSchedule = () => {
   const [isDirty,     setIsDirty]     = useState(false);
   const [apiError,    setApiError]    = useState(null);
 
-  // Ref untuk preserve kota tersimpan saat load config (mencegah province-change effect me-reset city)
+  // Ref untuk preserve kota tersimpan saat load config
   const savedCityRef = useRef("");
+  const initialLoadDone = useRef(false);
 
 
-  /* ── Load saved config ── */
+  /* ── Load config: SELALU ambil province/city dari Profil Masjid → fuzzy match ke prayer API ── */
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (saved) {
-      // Set ref DULU sebelum setProvince, agar province-change effect bisa membacanya
-      if (saved.city) savedCityRef.current = saved.city;
+    const loadConfig = async () => {
+      try {
+        // 1. Load site_settings (untuk simpan allSettings)
+        const settings = await dashboardService.getSiteSettings();
+        setAllSettings(settings);
 
-      setProvince(saved.province || "");
-      setCity(saved.city || "");
+        // 2. Ambil province/city: PRIORITAS dari settings.prayer_config, fallback ke Profil Masjid
+        let profileProv = "";
+        let profileCity = "";
+        
+        if (settings?.prayer_config?.province && settings?.prayer_config?.city) {
+          profileProv = settings.prayer_config.province;
+          profileCity = settings.prayer_config.city;
+        } else {
+          // Fallback ke profil masjid jika belum ada pengaturan
+          try {
+            const res = await publicService.getMasjidProfile(userSlug);
+            const mosque = res.data?.data;
+            if (mosque) {
+              profileProv = mosque.province || "";
+              profileCity = mosque.city || mosque.district || "";
+            }
+          } catch (e) {
+            console.error("Failed to load mosque profile:", e);
+          }
+        }
 
-      // Backward compat: old imam format was a string, new format is {subuh,dzuhur,...}
-      const savedImam = saved.imam;
-      if (typeof savedImam === "string" && savedImam.trim()) {
-        const name = savedImam.trim();
-        setImam({ subuh: name, dzuhur: name, ashar: name, maghrib: name, isya: name });
-      } else if (savedImam && typeof savedImam === "object") {
-        setImam({ ...DEFAULT_IMAM, ...savedImam });
-      } else {
-        setImam(DEFAULT_IMAM);
+        if (!profileProv) {
+          initialLoadDone.current = true;
+          return;
+        }
+
+        // 3. Fetch daftar provinsi dari Prayer API
+        setLoadingProv(true);
+        let provList = [];
+        try {
+          const provRes = await prayerAPI.getProvinces(userSlug);
+          provList = normalizeList(provRes?.data ?? provRes);
+          setProvinces(provList);
+          if (!provList.length) setApiError("Daftar provinsi kosong. Periksa koneksi.");
+        } catch (e) {
+          console.error("Province fetch error:", e);
+          setApiError("Gagal memuat provinsi.");
+        } finally {
+          setLoadingProv(false);
+        }
+
+        // 4. Fuzzy match provinsi profil → daftar prayer API
+        //    Prioritas: exact match dulu, baru substring match
+        let matchedProv = "";
+        if (profileProv && provList.length) {
+          const target = profileProv.toUpperCase().replace(/^PROV(?:INSI)?\.?\s*/i, "");
+          // Pass 1: Exact match (case-insensitive)
+          matchedProv = provList.find(p => p.toUpperCase() === target) || "";
+          // Pass 2: Exact match setelah strip prefix "Kepulauan", "D.I.", dll
+          if (!matchedProv) {
+            matchedProv = provList.find(p => {
+              const norm = p.toUpperCase();
+              return target === norm || target.includes(norm);
+            }) || "";
+          }
+          // Pass 3: Fallback substring (hanya jika belum ketemu)
+          if (!matchedProv) {
+            matchedProv = provList.find(p => p.toUpperCase().includes(target)) || "";
+          }
+        }
+
+        if (!matchedProv) {
+          initialLoadDone.current = true;
+          return;
+        }
+
+        setProvince(matchedProv);
+
+        // 5. Fetch daftar kota → fuzzy match
+        setLoadingCity(true);
+        let matchedCity = "";
+        try {
+          const cityRes = await prayerAPI.getCities(userSlug, matchedProv);
+          const cityList = normalizeList(cityRes?.data ?? cityRes);
+          setCities(cityList);
+
+          if (profileCity && cityList.length) {
+            // Pass 1: Exact match (untuk memprioritaskan yang dari settings.prayer_config)
+            let match = cityList.find(c => c === profileCity);
+
+            // Pass 2: Fuzzy match
+            if (!match) {
+              const normTarget = profileCity.toUpperCase()
+                .replace(/^KAB(?:UPATEN)?\.?\s*/i, "")
+                .replace(/^KOTA\.?\s*/i, "")
+                .trim();
+
+              match = cityList.find(c => {
+                const normC = c.toUpperCase()
+                  .replace(/^KAB(?:UPATEN)?\.?\s*/i, "")
+                  .replace(/^KOTA\.?\s*/i, "")
+                  .trim();
+                return normC === normTarget || normC.includes(normTarget) || normTarget.includes(normC);
+              });
+            }
+
+            if (match) {
+              matchedCity = match;
+              setCity(match);
+              fetchSchedule(matchedProv, match);
+            }
+          }
+        } catch (e) {
+          console.error("Cities fetch error:", e);
+        } finally {
+          setLoadingCity(false);
+        }
+
+        // 6. Auto-save prayer_config (format prayer API) agar MosqueWebsitePage/TvDisplay bisa pakai langsung
+        if (matchedProv && matchedCity) {
+          const newConfig = { province: matchedProv, city: matchedCity };
+          const existing = settings.prayer_config || {};
+          if (existing.province !== matchedProv || existing.city !== matchedCity) {
+            const updated = { ...settings, prayer_config: newConfig };
+            await dashboardService.updateSiteSettings(updated);
+            setAllSettings(updated);
+          }
+        }
+
+        initialLoadDone.current = true;
+      } catch (e) {
+        console.error("Failed to load prayer config", e);
+        initialLoadDone.current = true;
       }
-
-      setIqamah({ ...DEFAULT_IQAMAH, ...(saved.iqamah || {}) });
-    }
-  }, []);
-
-
-
-  /* ── Fetch provinces ── */
-  useEffect(() => {
-    setLoadingProv(true);
-    setApiError(null);
-    prayerAPI.getProvinces(userSlug)
-      .then((res) => {
-        const list = normalizeList(res?.data ?? res);
-        setProvinces(list);
-        if (!list.length) setApiError("Daftar provinsi kosong. Periksa koneksi.");
-      })
-      .catch((e) => {
-        console.error("Province fetch error:", e);
-        setApiError("Gagal memuat provinsi.");
-      })
-      .finally(() => setLoadingProv(false));
+    };
+    loadConfig();
   }, [userSlug]);
 
-  /* ── Fetch cities on province change ── */
+
+
+  /* ── Fetch cities saat user MENGUBAH provinsi (bukan saat load awal) ── */
   useEffect(() => {
+    if (!initialLoadDone.current) return; // Skip saat initial load (sudah ditangani loadConfig)
     if (!province) { setCities([]); return; }
     setLoadingCity(true);
     setCities([]);
+    setCity("");
+    setTodaySchedule(null);
     prayerAPI.getCities(userSlug, province)
       .then((res) => {
         const list = normalizeList(res?.data ?? res);
         setCities(list);
-        // Jika ada city tersimpan dari config, pertahankan jika ada di list
-        if (savedCityRef.current) {
-          const match = list.find((c) => c === savedCityRef.current);
-          if (!match) setCity("");
-          savedCityRef.current = "";
-        }
       })
       .catch((e) => console.error("Cities fetch error:", e))
       .finally(() => setLoadingCity(false));
@@ -195,13 +270,6 @@ const PrayerSchedule = () => {
       if (!entry) entry = list[0];
 
       setTodaySchedule(entry);
-
-      // Otomatis simpan ke localStorage agar sinkron dengan PreviewPage/Website
-      const templatePrayer = {};
-      PRAYERS.forEach(({ key, templateKey }) => {
-        templatePrayer[templateKey] = entry[key] || "";
-      });
-      localStorage.setItem(SCHEDULE_KEY, JSON.stringify(templatePrayer));
     } catch (e) {
       console.error("Schedule fetch error:", e);
       setApiError("Gagal mengambil jadwal. Periksa koneksi internet.");
@@ -210,13 +278,7 @@ const PrayerSchedule = () => {
     }
   }, []);
 
-  /* Auto-fetch on load if saved config exists */
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (saved?.province && saved?.city) {
-      fetchSchedule(saved.province, saved.city);
-    }
-  }, [fetchSchedule]);
+  // Removed Auto-fetch on load effect because it is now handled inside loadConfig
 
   /* ── Active prayer detector: sholat terakhir yang sudah lewat tetap nyala ── */
   const getActivePrayer = () => {
@@ -249,13 +311,7 @@ const PrayerSchedule = () => {
   const activePrayer = getActivePrayer();
 
 
-  /* ── Compute iqamah display time ── */
-  const getIqamahTime = (adzan, offsetMin) => {
-    if (!adzan || !offsetMin) return null;
-    const [h, m] = adzan.split(":").map(Number);
-    const total = h * 60 + m + offsetMin;
-    return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
-  };
+
 
   /* ── Save ── */
   const handleSave = async () => {
@@ -265,23 +321,22 @@ const PrayerSchedule = () => {
       return;
     }
     setSaving(true);
-    const config = { province, city, imam, iqamah };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    try {
+      const prayerConfig = { province, city };
+      const updated = { ...allSettings, prayer_config: prayerConfig };
+      await dashboardService.updateSiteSettings(updated);
+      setAllSettings(updated);
 
-    // Save template-compatible schedule to mid_prayer
-    if (todaySchedule) {
-      const templatePrayer = {};
-      PRAYERS.forEach(({ key, templateKey }) => {
-        templatePrayer[templateKey] = todaySchedule[key] || "";
-      });
-      localStorage.setItem(SCHEDULE_KEY, JSON.stringify(templatePrayer));
+      setIsDirty(false);
+      setToast({ type: "success", msg: "Pengaturan jadwal sholat berhasil disimpan!" });
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) {
+      console.error("Failed to save prayer config", e);
+      setToast({ type: "error", msg: "Gagal menyimpan. Silakan coba lagi." });
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setSaving(false);
     }
-
-    await new Promise((r) => setTimeout(r, 400));
-    setSaving(false);
-    setIsDirty(false);
-    setToast({ type: "success", msg: "Pengaturan jadwal sholat berhasil disimpan!" });
-    setTimeout(() => setToast(null), 3000);
   };
 
   const markDirty = () => setIsDirty(true);
@@ -328,16 +383,7 @@ const PrayerSchedule = () => {
     .ps-active-dot { width: 5px; height: 5px; border-radius: 50%; background: #C9A84C; margin: 5px auto 0; animation: psPulse 2s ease infinite; box-shadow: 0 0 0 3px rgba(201,168,76,0.25); }
     @keyframes psPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:0.7} }
 
-    /* Imam batch row */
-    .ps-imam-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F5F6F8; }
-    .ps-imam-row:last-child { border-bottom: none; }
-    .ps-imam-label { width: 80px; flex-shrink: 0; font-size: 0.875rem; font-weight: 700; color: #344054; display: flex; align-items: center; gap: 6px; }
 
-    /* Iqamah row */
-    .ps-iqamah-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F5F6F8; }
-    .ps-iqamah-row:last-child { border-bottom: none; }
-    .ps-iqamah-input { width: 68px; padding: 7px 10px; border: 1.5px solid #EAECF0; border-radius: 8px; font-size: 0.875rem; font-weight: 700; color: #0D3B2E; background: #F7F8FA; outline: none; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; }
-    .ps-iqamah-input:focus { border-color: #1A5C45; background: #fff; }
 
     /* Callout */
     .ps-callout { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: 10px; font-size: 0.8125rem; font-weight: 600; margin-bottom: 16px; line-height: 1.5; }
@@ -389,7 +435,7 @@ const PrayerSchedule = () => {
 
       <div className="row g-4">
         {/* ══════════════════════ KIRI ══════════════════════ */}
-        <div className="col-lg-7">
+        <div className="col-lg-12">
 
           {/* Konfigurasi Lokasi */}
           <div className="ps-section">
@@ -466,15 +512,11 @@ const PrayerSchedule = () => {
                   {PRAYERS.map(({ key, label, emoji }) => {
                     const isActive = activePrayer === key;
                     const adzanTime = todaySchedule[key];
-                    const iqDisplay = getIqamahTime(adzanTime, iqamah[key]);
                     return (
                       <div key={key} className={`ps-prayer-card ${isActive ? "active" : ""}`}>
                         <div className="ps-prayer-emoji">{emoji}</div>
                         <div className="ps-prayer-name">{label}</div>
                         <div className="ps-prayer-time">{adzanTime || "--:--"}</div>
-                        {iqDisplay && (
-                          <div className="ps-prayer-iqamah">Iqamah {iqDisplay}</div>
-                        )}
                         {isActive && <div className="ps-active-dot" />}
                       </div>
                     );
@@ -482,7 +524,7 @@ const PrayerSchedule = () => {
                 </div>
                 <div style={{ fontSize: "0.75rem", color: "#9AA3AF", padding: "8px 12px", background: "#F7F8FA", borderRadius: 8 }}>
                   <FaInfoCircle size={10} style={{ marginRight: 5, color: "#1A5C45" }} />
-                  Waktu adzan dari equran.id · Iqamah dihitung dari pengaturan di bawah
+                  Waktu adzan otomatis disinkronisasi dari equran.id
                 </div>
               </>
             ) : (
@@ -499,62 +541,7 @@ const PrayerSchedule = () => {
           </div>
         </div>
 
-        {/* ══════════════════════ KANAN ══════════════════════ */}
-        <div className="col-lg-5">
 
-          {/* Imam Batch */}
-          <div className="ps-section">
-            <div className="ps-section-title">👤 Nama Imam per Waktu Sholat</div>
-            <div className="ps-callout info" style={{ marginBottom: 14 }}>
-              <FaInfoCircle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
-              <span>Isi nama imam untuk setiap waktu sholat sekaligus. Kosongkan jika tidak perlu ditampilkan.</span>
-            </div>
-            {PRAYERS.map(({ key, label, emoji }) => (
-              <div key={key} className="ps-imam-row">
-                <div className="ps-imam-label">
-                  <span>{emoji}</span>
-                  <span>{label}</span>
-                </div>
-                <input
-                  className="ps-input"
-                  type="text"
-                  placeholder={`Imam ${label}...`}
-                  value={imam[key] || ""}
-                  onChange={(e) => { setImam((p) => ({ ...p, [key]: e.target.value })); markDirty(); }}
-                  style={{ flex: 1 }}
-                />
-              </div>
-            ))}
-            <p className="ps-hint" style={{ marginTop: 10 }}>📌 Tampil di website masjid jika template mendukung.</p>
-          </div>
-
-          {/* Iqamah */}
-          <div className="ps-section">
-            <div className="ps-section-title">⏱️ Waktu Iqamah</div>
-            <div className="ps-callout info" style={{ marginBottom: 14 }}>
-              <FaInfoCircle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
-              <span>Berapa menit setelah adzan, sholat berjamaah dimulai.</span>
-            </div>
-            {PRAYERS.map(({ key, label, emoji }) => (
-              <div key={key} className="ps-iqamah-row">
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.9375rem" }}>
-                  <span>{emoji}</span>
-                  <span style={{ fontWeight: 700, color: "#1a1a1a" }}>{label}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <input
-                    className="ps-iqamah-input"
-                    type="number" min="0" max="60"
-                    value={iqamah[key] ?? 0}
-                    onChange={(e) => { setIqamah((p) => ({ ...p, [key]: parseInt(e.target.value, 10) || 0 })); markDirty(); }}
-                  />
-                  <span style={{ fontSize: "0.8125rem", color: "#9AA3AF", whiteSpace: "nowrap" }}>menit</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
       </div>
 
       {/* ── Floating Save ── */}

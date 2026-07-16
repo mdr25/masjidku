@@ -47,7 +47,6 @@ const toTitleCase = (str) => {
 // sub_district = Kelurahan / Desa
 // postal     = Kode Pos
 // description = Tentang Masjid
-// visiMisi   = Visi & Misi (extra, set from profile page)
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── react-select shared styles ───────────────────────────────────────────────
@@ -117,7 +116,6 @@ const MosqueProfile = () => {
     sub_district: "",
     postal: "",
     description: "",
-    visiMisi: "",
     template_code: "",
     slug: "",
   });
@@ -142,23 +140,42 @@ const MosqueProfile = () => {
   const [error,    setError]    = useState("");
 
 
+  const fetchProfile = async () => {
+    try {
+      const res = await dashboardService.getProfile();
+      const profile = res.data?.data || {};
+      // Convert any null values from the API to empty strings to avoid React warnings
+      const sanitizedProfile = Object.fromEntries(
+        Object.entries(profile).map(([key, value]) => [key, value === null ? "" : value])
+      );
+      
+      let imageUrl = profile.profile_image_url || "";
+      // Load saved profile image from site_settings (legacy base64 or mirror)
+      if (!imageUrl) {
+        try {
+          const settings = await dashboardService.getSiteSettings();
+          if (settings.profile_image) {
+            imageUrl = settings.profile_image;
+          }
+        } catch { /* ignore */ }
+      }
+      
+      sanitizedProfile.image = imageUrl;
+      // Merge ignoring previous formData to ensure strict reset from server
+      const merged = { ...formData, ...sanitizedProfile };
+      setFormData(merged);
+      // Snapshot the loaded data — used to detect dirty state
+      initialData.current = merged;
+    } catch (err) {
+      console.error("Gagal memuat profil:", err);
+      setError("Gagal memuat data profil. Silakan refresh halaman.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ── Load profile on mount ──
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await dashboardService.getProfile();
-        const profile = res.data?.data || {};
-        const merged = { ...formData, ...profile };
-        setFormData(merged);
-        // Snapshot the loaded data — used to detect dirty state
-        initialData.current = merged;
-      } catch (err) {
-        console.error("Gagal memuat profil:", err);
-        setError("Gagal memuat data profil. Silakan refresh halaman.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -247,8 +264,11 @@ const MosqueProfile = () => {
     });
   };
 
-  // ── Image upload via FileReader ──
+  // ── Image upload via Object URL ──
   const fileRef = useRef(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [removeImageRequested, setRemoveImageRequested] = useState(false);
+
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -258,24 +278,114 @@ const MosqueProfile = () => {
       setTimeout(() => setToast(null), 3000);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setFormData((p) => ({ ...p, image: ev.target.result }));
-    };
-    reader.readAsDataURL(file);
+    
+    // Revoke old object URL if exists
+    if (logoFile && formData.image.startsWith("blob:")) {
+      URL.revokeObjectURL(formData.image);
+    }
+
+    setLogoFile(file);
+    setRemoveImageRequested(false);
+    setFormData((p) => ({ ...p, image: URL.createObjectURL(file) }));
     e.target.value = "";
   };
-  const removeImage = () => setFormData((p) => ({ ...p, image: "" }));
+
+  const removeImage = () => {
+    if (logoFile && formData.image.startsWith("blob:")) {
+      URL.revokeObjectURL(formData.image);
+    }
+    setLogoFile(null);
+    setRemoveImageRequested(true);
+    setFormData((p) => ({ ...p, image: "" }));
+  };
 
   const handleSubmit = async (e) => {
     if (e?.preventDefault) e.preventDefault();
-    if (!isDirty) return;
+    if (!isDirty && !logoFile && !removeImageRequested) return;
     setError("");
+
+    // Validate if any non-empty field is being cleared (due to backend restriction)
+    const textFields = [
+      "name",
+      "contact",
+      "email",
+      "address",
+      "province",
+      "city",
+      "district",
+      "sub_district",
+      "postal",
+      "description"
+    ];
+    const fieldNames = {
+      name: "Nama Masjid",
+      contact: "No. Telepon / Kontak",
+      email: "Email Masjid",
+      address: "Alamat",
+      province: "Provinsi",
+      city: "Kabupaten/Kota",
+      district: "Kecamatan",
+      sub_district: "Kelurahan",
+      postal: "Kode Pos",
+      description: "Deskripsi/Sejarah"
+    };
+
+    const clearedFields = [];
+    if (initialData.current) {
+      for (const field of textFields) {
+        const initialVal = initialData.current[field];
+        const currentVal = formData[field];
+        if (
+          initialVal &&
+          String(initialVal).trim() !== "" &&
+          (!currentVal || String(currentVal).trim() === "")
+        ) {
+          clearedFields.push(fieldNames[field] || field);
+        }
+      }
+    }
+
+    if (clearedFields.length > 0) {
+      setToast({
+        type: "error",
+        msg: `Pengosongan field (${clearedFields.join(", ")}) tidak didukung oleh API saat ini. Silakan isi kembali.`
+      });
+      setTimeout(() => setToast(null), 5000);
+      return;
+    }
+
     setSaving(true);
     try {
-      await dashboardService.updateProfile(formData);
-      // Update snapshot so button goes back to disabled
-      initialData.current = { ...formData };
+      if (isDirty) {
+        await dashboardService.updateProfile(formData);
+      }
+      
+      let updatedImageUrl = null;
+      let shouldUpdateMirror = false;
+      
+      if (removeImageRequested) {
+        await dashboardService.deleteProfileImage();
+        updatedImageUrl = "";
+        shouldUpdateMirror = true;
+      }
+      
+      if (logoFile) {
+        const uploadRes = await dashboardService.uploadProfileImage(logoFile);
+        updatedImageUrl = uploadRes.data?.data?.profile_image_url || "";
+        shouldUpdateMirror = true;
+      }
+      
+      // Simpan URL profil foto yang pendek sebagai mirror ke site_settings agar tampil di API Publik
+      if (shouldUpdateMirror) {
+        const currentSettings = await dashboardService.getSiteSettings();
+        const updatedSettings = { ...currentSettings, profile_image: updatedImageUrl };
+        await dashboardService.updateSiteSettings(updatedSettings);
+      }
+
+      setLogoFile(null);
+      setRemoveImageRequested(false);
+      await fetchProfile();
+      
       setToast({ type: "success", msg: "Profil masjid berhasil disimpan!" });
       setTimeout(() => setToast(null), 3500);
     } catch (err) {
@@ -487,7 +597,11 @@ const MosqueProfile = () => {
 
           <Row className="g-3">
             <Col md={8}>
-              <FieldGroup label="Nama Masjid" required>
+              <FieldGroup 
+                label="Nama Masjid" 
+                required 
+                hint="Nama resmi masjid Anda. Catatan: jika Nama Masjid pada website tidak berubah, periksa apakah Anda menggunakan Teks Logo kustom di menu Header & Navigasi."
+              >
                 <Form.Control type="text" name="name" className="pf-input"
                   placeholder="Contoh: Masjid Al-Furqon"
                   value={formData.name} onChange={handleChange} required />
@@ -613,19 +727,12 @@ const MosqueProfile = () => {
               value={formData.description} onChange={handleChange}
               style={{ resize: "vertical" }} />
           </FieldGroup>
-          <FieldGroup label="Visi & Misi"
-            hint="Tuliskan visi misi masjid untuk ditampilkan di website.">
-            <Form.Control as="textarea" rows={5} name="visiMisi" className="pf-input"
-              placeholder={"Visi: Menjadi pusat peribadatan...\nMisi: ..."}
-              value={formData.visiMisi} onChange={handleChange}
-              style={{ resize: "vertical" }} />
-          </FieldGroup>
         </div>
       </Form>
 
       {/* ── Floating Save Bar ── */}
       <div className="floating-save-bar">
-        {isDirty && (
+        {(isDirty || logoFile) && (
           <span className="text-muted" style={{ fontSize: "0.8rem" }}>
             Ada perubahan yang belum disimpan
           </span>
@@ -634,8 +741,8 @@ const MosqueProfile = () => {
           type="button"
           className="floating-save-btn"
           onClick={handleSubmit}
-          disabled={saving || !isDirty}
-          title={!isDirty ? "Tidak ada perubahan" : "Simpan perubahan"}
+          disabled={saving || (!isDirty && !logoFile)}
+          title={(!isDirty && !logoFile) ? "Tidak ada perubahan" : "Simpan perubahan"}
         >
           {saving
             ? <><Spinner size="sm" animation="border" /> Menyimpan...</>
