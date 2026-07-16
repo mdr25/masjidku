@@ -861,15 +861,15 @@ const Template2 = ({ data }) => {
               <h5 className="t2-footer-title">Kontak</h5>
               <div className="d-flex align-items-start gap-3 mb-3">
                 <FaMapMarkerAlt color="#3B82F6" className="mt-1" />
-                <span style={{ color: "#94A3B8", lineHeight: 1.6 }}>{profile.address || "Jl. Raya Masjid No. 1"}</span>
+                <span style={{ color: "#94A3B8", lineHeight: 1.6 }}>{data?.footer?.contact?.address || profile.address || "Jl. Raya Masjid No. 1"}</span>
               </div>
               <div className="d-flex align-items-center gap-3 mb-3">
                 <FaPhone color="#3B82F6" />
-                <span style={{ color: "#94A3B8" }}>{profile.contact || "0812-3456-7890"}</span>
+                <span style={{ color: "#94A3B8" }}>{data?.footer?.contact?.phone || profile.contact || "0812-3456-7890"}</span>
               </div>
               <div className="d-flex align-items-center gap-3">
                 <FaEnvelope color="#3B82F6" />
-                <span style={{ color: "#94A3B8" }}>{profile.email || "info@masjid.com"}</span>
+                <span style={{ color: "#94A3B8" }}>{data?.footer?.contact?.email || profile.email || "info@masjid.com"}</span>
               </div>
             </Col>
 

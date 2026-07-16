@@ -229,7 +229,8 @@ export const useMosqueWebsiteData = (slug) => {
           articles,
           gallery,
           footer: {
-            about: profile.description || "Bersama memakmurkan masjid.",
+            about: siteConfig.footer?.tagline || profile.description || "Bersama memakmurkan masjid.",
+            copyrightText: siteConfig.footer?.copyrightText || "",
             links: [
               { label: "Jadwal Sholat", url: "#prayer" },
               { label: "Kajian", url: "#kajian" },
@@ -237,9 +238,17 @@ export const useMosqueWebsiteData = (slug) => {
               { label: "Berita", url: "#berita" },
             ],
             social: {
-              facebook: siteConfig.social_fb || "",
-              instagram: siteConfig.social_ig || "",
-              youtube: siteConfig.social_yt || "",
+              facebook: siteConfig.footer?.social?.facebook || siteConfig.social_fb || "",
+              instagram: siteConfig.footer?.social?.instagram || siteConfig.social_ig || "",
+              youtube: siteConfig.footer?.social?.youtube || siteConfig.social_yt || "",
+              twitter: siteConfig.footer?.social?.twitter || "",
+              whatsapp: siteConfig.footer?.social?.whatsapp || "",
+              tiktok: siteConfig.footer?.social?.tiktok || "",
+            },
+            contact: {
+              phone: siteConfig.footer?.contact?.phone || profile.contact || "",
+              email: siteConfig.footer?.contact?.email || profile.email || "",
+              address: siteConfig.footer?.contact?.address || profile.address || "",
             },
           },
         });
