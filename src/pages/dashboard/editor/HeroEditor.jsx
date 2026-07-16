@@ -33,7 +33,7 @@ const HeroEditor = () => {
   const getFullUrl = (path) => {
     if (!path) return "";
     if (path.startsWith("http") || path.startsWith("blob:") || path.startsWith("data:")) return path;
-    const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+    const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
     const baseUrl = apiUrl.replace(/\/api$/, "");
     return `${baseUrl}/storage/${path}`;
   };
