@@ -601,10 +601,10 @@ const AdminVerificationDetail = () => {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {mosque.waqf_imb_document_url ? (
                   <a href={mosque.waqf_imb_document_url} target="_blank" rel="noopener noreferrer" className="sd-doc-link">
-                    <FaFileAlt size={14} /> Surat Wakaf / IMB <FaExternalLinkAlt size={10} />
+                    <FaFileAlt size={14} /> Akta Wakaf / IMB / Surat Keterangan <FaExternalLinkAlt size={10} />
                   </a>
                 ) : (
-                  <span className="sd-no-doc">Belum ada Surat Wakaf / IMB</span>
+                  <span className="sd-no-doc">Akta Wakaf / IMB / Surat Keterangan (tidak diunggah)</span>
                 )}
                 {mosque.management_decree_document_url ? (
                   <a href={mosque.management_decree_document_url} target="_blank" rel="noopener noreferrer" className="sd-doc-link">

@@ -11,7 +11,7 @@ const Step5Terms = ({ data, updateData, onNext }) => {
     if (!data.domain || !data.templateId) return false;
     const i = data.info;
     if (!i.name || !i.address || !i.email || !i.province || !i.city || !i.district || !i.contact) return false;
-    if (!data.files || !data.files.wakaf || !data.files.sk) return false;
+    if (!data.files || !data.files.sk) return false;
     return true;
   };
 
@@ -32,9 +32,11 @@ const Step5Terms = ({ data, updateData, onNext }) => {
       await onboardingService.updateProfile(data.domain, data.info);
 
       // 4. Submit Verification (jika ada file yang diunggah)
-      if (data.files && data.files.wakaf && data.files.sk) {
+      if (data.files && data.files.sk) {
         const fd = new FormData();
-        fd.append("waqf_imb_document", data.files.wakaf);
+        if (data.files.wakaf) {
+          fd.append("waqf_imb_document", data.files.wakaf);
+        }
         fd.append("management_decree_document", data.files.sk);
         await onboardingService.submitVerification(fd);
       }

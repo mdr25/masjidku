@@ -20,8 +20,8 @@ const VerificationStatusModal = ({ show, onHide, profile, onStatusUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!files.wakaf || !files.sk) {
-      setError("Silakan lengkapi kedua dokumen wajib.");
+    if (!files.sk) {
+      setError("Silakan lengkapi dokumen SK Kepengurusan.");
       return;
     }
 
@@ -31,11 +31,13 @@ const VerificationStatusModal = ({ show, onHide, profile, onStatusUpdate }) => {
 
     try {
       const formData = new FormData();
-      formData.append("waqf_imb_document", files.wakaf);
+      if (files.wakaf) {
+        formData.append("waqf_imb_document", files.wakaf);
+      }
       formData.append("management_decree_document", files.sk);
 
       await onboardingService.submitVerification(formData);
-      setSuccessMsg("Dokumen berhasil diunggah ulang! Status berubah menjadi Menunggu Verifikasi.");
+      setSuccessMsg("Dokumen berhasil diunggah! Status berubah menjadi Menunggu Verifikasi.");
       if (onStatusUpdate) onStatusUpdate();
       
       // Delay to let user read success message before closing
@@ -130,12 +132,11 @@ const VerificationStatusModal = ({ show, onHide, profile, onStatusUpdate }) => {
             <div className="row g-4">
               <div className="col-md-6">
                 <UploadZone
-                  label="Akta Wakaf / IMB"
+                  label="Akta Wakaf / IMB / Surat Keterangan"
                   hint="PDF, JPG, PNG — maks. 5MB"
                   fileKey="wakaf"
                   files={files}
                   onFileChange={handleFileChange}
-                  required
                 />
               </div>
               <div className="col-md-6">

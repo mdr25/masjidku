@@ -202,9 +202,24 @@ const ThemePage = () => {
                   </div>
 
                   <div className="mb-3">
-                    {tpl.tags.map((tag, i) => (
-                      <span key={i} className="tp-tag">{tag}</span>
-                    ))}
+                    {tpl.tags.map((tag, i) => {
+                      const isHot = tag === "Paling Banyak Diunduh";
+                      return (
+                        <span 
+                          key={i} 
+                          className="tp-tag"
+                          style={isHot ? { 
+                            background: "rgba(201,168,76,0.12)", 
+                            color: "#C9A84C", 
+                            borderColor: "rgba(201,168,76,0.3)", 
+                            border: "1px solid" 
+                          } : {}}
+                        >
+                          {isHot && "⭐ "}
+                          {tag}
+                        </span>
+                      );
+                    })}
                   </div>
 
                   {/* Action */}

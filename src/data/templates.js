@@ -19,7 +19,7 @@ const TEMPLATE_CATALOG = [
     // ── label ────────────────────────────────────────────────────────────────
     name: "Zamrud Harmoni",
     desc: "Nuansa hijau alami dengan aksen emas. Cocok untuk masjid dengan tampilan modern dan elegan.",
-    tags: ["Modern", "Minimalis"],
+    tags: ["Modern", "Minimalis", "Paling Banyak Diunduh"],
 
     // ── status ───────────────────────────────────────────────────────────────
     ready: true, // true = bisa dipilih; false = segera hadir
